@@ -4,6 +4,8 @@ int sum(int a, int b, int c) {
     return a + b;
 }
 
+functioncall(anan, baban);
+
 int main() {
     int x = 10;
     int y = 20;

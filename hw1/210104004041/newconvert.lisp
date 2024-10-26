@@ -3,10 +3,11 @@
 
 (defun line-type (line)
     (cond
-        ((cl-ppcre:scan "[a-zA-Z_]+\\s+[a-zA-Z_]+\\s*\\(.*\\)\\s*;" line) 'function-declaration)
-        ((cl-ppcre:scan "[a-zA-Z_]+\\s+[a-zA-Z_]+\\s*\\(.*\\)\\s*\\{" line) 'function-definition)
+        ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*;" line) 'function-declaration)
+        ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*\\{" line) 'function-definition)
+        ((cl-ppcre:scan "\\w+\\s*\\(.*\\)\\s*;" line) 'function-call)
         ((cl-ppcre:scan "\\s*for\\s*\\(" line) 'for-loop) ; prior to variable-definition
-        ((cl-ppcre:scan "[a-zA-Z_]+\\s+[a-zA-Z_]+\\s*=\\s*\\w+\\s*;" line)  'variable-definition) 
+        ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*=\\s*\\w+\\s*;" line)  'variable-definition) 
         ((cl-ppcre:scan "[a-zA-Z_]+\\s*=\\s*\\w+\\s*;" line) 'assignment)
         ((cl-ppcre:scan "\\s*while\\s*\\(" line) 'while-loop)
 
@@ -22,7 +23,7 @@
 ;(load "newconvert.lisp")
 ;(main "hoca-input.c" "output.lisp")
 
-
+;done
 (defun convert-closebrace (line)
     (declare (ignore line))
     (format nil ")")
@@ -195,6 +196,17 @@
     )
 )
 
+(defun convert-function-call (line)
+    (let* 
+        (   
+            (split-line (cl-ppcre:split "\\s*\\(" line))
+            (function-name (first split-line))
+            (arguments (second split-line))
+            (arguments (string-trim '(#\) #\; #\,) arguments))
+        )
+        (format nil "(~a ~a)" function-name arguments)
+    )
+)
 
 (defun convert-if (line)
     (let* 
@@ -219,19 +231,6 @@
     )
 )
 
-(defun convert-function-call (line)
-    (let* 
-        (
-            (function-call-content 
-                (second (split-sequence:split-sequence #\Space (subseq line 0 (position #\) line))))
-            )
-            (function-name (first (split-sequence:split-sequence #\Space function-call-content)))
-            (function-args (second (split-sequence:split-sequence #\Space function-call-content)))
-        )
-        (format nil "(~a ~a)" function-name function-args)
-    )
-)
-
 
 (defun convert-other (line)
   (format nil "unknown line type : ~a" line)
@@ -246,9 +245,9 @@
         ((eq line-type 'for-loop) #'convert-for)
         ((eq line-type 'while-loop) #'convert-while)
         ((eq line-type 'function-definition) #'convert-function-definition)
+        ((eq line-type 'function-call) #'convert-function-call)
         ;((eq line-type 'if-statement) #'convert-if)
         ;((eq line-type 'assignment-by-function-return) #'convert-assignment-by-function-return)
-        ;((eq line-type 'function-call) #'convert-function-call)
         (t #'convert-other)
     )
 )
