@@ -40,13 +40,17 @@
 )
  
 (defun convert-function-definition (line)
-  (let* ((parts (cl-ppcre:split "^\\w+ " line))
-         (return-type (first parts))
-         (function (second parts))
-         (function-name (first (cl-ppcre:split "\\(" function)))
-         (formatted-params (convert-params-with-type-to-lisp-version function)))
+  (let* 
+    (
+      (parts (cl-ppcre:split "^\\w+ " line))
+      (return-type (first parts))
+      (function (second parts))
+      (function-name (first (cl-ppcre:split "\\(" function)))
+      (formatted-params (convert-params-with-type-to-lisp-version function))
+    )
 
-      (format nil "(defun ~a ~a" function-name formatted-params))
+    (format nil "(defun ~a ~a" function-name formatted-params)
+  )
 )
 
 (defun convert-function-declaration (line)

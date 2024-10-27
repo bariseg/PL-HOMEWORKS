@@ -1,6 +1,8 @@
-int sum(int a, int b, int c);
+int sum(int a, char b, char c);
 
-int sum(int a, int b, int c) {
+int bos();
+
+int sum(int a, char b, char c) {
     return a + b;
 }
 

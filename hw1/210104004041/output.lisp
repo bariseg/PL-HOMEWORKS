@@ -1,16 +1,18 @@
-(declaim (ftype (function (integer integer integer) integer) sum))
+(declaim (ftype (function (integer character character) integer) sum))
 
-unknown line type : int sum(int a, int b, int c) {
+(declaim (ftype (function ( ) integer) bos))
+
+(defun sum (a b c)
 unknown line type : return a + b;
 )
 
 (functionname par1 par2 par3 par4)
 
-unknown line type : int main() {
+(defun main ( )
 (x 10)
 (y 20)
 (a 30)
-(result sum(x, y, 30))
+(result (sum x y 30))
 
 (setf result (sum x y 30))
 (setf result (+ x y))

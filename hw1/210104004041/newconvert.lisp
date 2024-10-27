@@ -5,12 +5,11 @@
     (cond
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*;" line) 'function-declaration)
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*\\{" line) 'function-definition)
-        ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s*=" line) 'assignment)
+        ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s*=" line) 'assignment) ; includes assigments by function call, arithmetic operation, logical operation
         ((cl-ppcre:scan "^\\s*\\w+\\s*\\(.*\\)\\s*;" line) 'function-call)
         ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s+\\w+\\s*=" line)  'variable-definition)
         ((cl-ppcre:scan "\\s*for\\s*\\(" line) 'for-loop)
         ((cl-ppcre:scan "\\s*while\\s*\\(" line) 'while-loop)
-
 
         ;;((cl-ppcre:scan "if\\<s*\\(" line) 'if-statement)
         ((cl-ppcre:scan "\\}" line) 'close-brace)
@@ -21,9 +20,8 @@
 ;(load "newconvert.lisp")
 ;(main "hoca-input.c" "output.lisp")
 
-
+;done
 (defun convert-arithmetic-operation (expression)
-    (print (format nil "~a" expression))
     (let* 
         (
             (var1 (first (cl-ppcre:split "\\s+" expression))) ; x
@@ -35,9 +33,9 @@
         (format nil "(~a ~a ~a)" operator var1 var2)
     )
 )
-    
+
+;done
 (defun convert-logical-operation (expression)
-    (print (format nil "~a" expression))
     (let* 
         (
             (var1 (first (cl-ppcre:split "\\s+" expression))) ; x
@@ -90,12 +88,17 @@
 (defun convert-variable-definition (line)
     (let* 
         (
-            (variable-definition-content (split-sequence:split-sequence #\= line))
+            (variable-definition-content (cl-ppcre:split "\\s*=\\s*" line :limit 2))
             (variable-part (first variable-definition-content))
             (var-name (string-trim " " (second (cl-ppcre:split " " variable-part))))
-            (value 
-                (first 
-                    (cl-ppcre:split ";" (string-trim '(#\Newline #\Return #\Space #\Tab #\=) (second variable-definition-content)))
+            
+            (trimmed-value (second variable-definition-content))
+            (value
+                (cond
+                    ((cl-ppcre:scan "[a-zA-Z_]+\\s*\\(.*\\)\\s*;" trimmed-value) (convert-function-call trimmed-value))
+                    ((cl-ppcre:scan "\\w+\\s*[\\+\\-\\*/%]{1}\\s*\\w+" trimmed-value) (convert-arithmetic-operation (remove #\; trimmed-value)))
+                    ((cl-ppcre:scan "\\w+\\s*(<|>|<=|>=|==|!=)\\s*\\w+" trimmed-value) (convert-logical-operation (remove #\; trimmed-value)))
+                    (t (first (cl-ppcre:split ";" (string-trim '(#\Newline #\Return #\Space #\Tab #\=) (second variable-definition-content)))))
                 )
             )
         )
@@ -109,6 +112,7 @@
         (
             (assignment-content (cl-ppcre:split "\\s*=\\s*" line :limit 2))
             (var (string-trim '(#\Newline #\Return #\Space #\Tab) (first assignment-content)))
+
             (trimmed-value (second assignment-content)) ;; .... ;
             (value ;;  .... ;
                 (cond
@@ -122,19 +126,6 @@
         (format nil "(setf ~a ~a)" var value)
     )
 )
-
-;done
-(defun convert-assignment-by-function-return (line)
-    (let* 
-        (
-            (assignment-content (split-sequence:split-sequence #\= line))
-            (var (string-trim '(#\Newline #\Return #\Space #\Tab) (first assignment-content)))
-            (value (convert-function-call (string-trim "=" (second assignment-content))))
-        )
-        (format nil "(~a ~a)" var value)
-    )
-)
-
 
 ;helper
 (defun convert-type-to-lisp-version (type)
@@ -151,17 +142,20 @@
 )
 ;helper
 (defun parse-types-as-list-from-params-list (params)
-  (let* (
-    (types '()))
-   
-   (dolist (param params)
-    (let ((param-trimmed  (first (cl-ppcre:split " " (string-trim " " param)))))
-      (push param-trimmed types)
+    (let* 
+        (
+            (types '())
+        )
+        (dolist (param params)
+            (
+                let ((param-trimmed  (first (cl-ppcre:split " " (string-trim " " param)))))
+                (push param-trimmed types)
+            )
+        )
+        (nreverse types)
     )
-   )
-     (nreverse types)
-  )
 )
+
 ;helper
 (defun parse-params-as-list-from-func (function)
     (let* 
@@ -179,19 +173,7 @@
         (nreverse cleaned-args)
     )
 )
-;helper
-(defun string-join (list separator)
-    (reduce 
-        (lambda (a b)
-            (if (string= a "")
-                b ; return b if a is empty
-                (format nil "~a~a~a" a separator b)
-            )
-        ) 
-        list 
-        :initial-value ""
-    )
-)
+
 ;done
 (defun convert-function-declaration (line)
     (let* 
@@ -203,18 +185,44 @@
 
             (function-part (second parts))
             (function-name (first (cl-ppcre:split "\\(" function-part)))
+
             (params (parse-params-as-list-from-func function-part))
             (types (parse-types-as-list-from-params-list params))
 
-            (converted-types '()) ;;bos list olusturduk
-        )
-        (dolist (type types)
-            (
-                let ((converted-type (convert-type-to-lisp-version type)))
-                (push converted-type converted-types)
+            (converted-types ;; for the immututability of the list we are creating a new list
+                (mapcar 
+                    (
+                        lambda (type) 
+                        (convert-type-to-lisp-version type)
+                    )
+                    types
+                )
             )
         )
-        (format nil "(declaim (ftype (function (~a) ~a) ~a))" (string-join converted-types " ") converted-return-type function-name )
+        (format nil "(declaim (ftype (function ~a ~a) ~a))" (or converted-types '(" ")) converted-return-type function-name )
+    )
+)
+
+(defun convert-function-definition (line)
+    (let* 
+        (
+            (parts (cl-ppcre:split " " line :limit 2))
+
+            (function-part (second parts))
+            (function-name (first (cl-ppcre:split "\\(" function-part)))
+            (params (parse-params-as-list-from-func function-part))
+
+            (param-names ;; for the immututability of the list we are creating a new list
+                (mapcar 
+                    (
+                        lambda (param) 
+                        (second (cl-ppcre:split "\\s+" param))
+                    )
+                    params
+                )
+            )
+        )
+        (format nil "(defun ~a ~a" function-name (or param-names '(" "))) ;;parantezler listten geliyor
     )
 )
 
@@ -229,22 +237,6 @@
             (arguments-cleaned (remove #\, arguments-trimmed))
         )
         (format nil "(~a ~a)" function-name arguments-cleaned)
-    )
-)
-
-
-
-(defun convert-function-definition (line)
-    (let* 
-        (
-            (function-name 
-                (first (split-sequence:split-sequence #\Space (subseq line 0 (position #\( line))))
-            )
-            (function-args 
-                (second (split-sequence:split-sequence #\Space (subseq line 0 (position #\{ line))))
-            )
-        )
-        (format nil "(defun ~a ~a" function-name function-args)
     )
 )
 
@@ -276,9 +268,8 @@
         ((eq line-type 'function-call) #'convert-function-call)
         ((eq line-type 'arithmetical-operation) #'convert-arithmetic-operation)
         ((eq line-type 'logical-operation) #'convert-logical-operation)
-        ;;((eq line-type 'function-definition) #'convert-function-definition)
+        ((eq line-type 'function-definition) #'convert-function-definition)
         ;((eq line-type 'if-statement) #'convert-if)
-        ((eq line-type 'assignment-by-function-return) #'convert-assignment-by-function-return)
         (t #'convert-other)
     )
 )
@@ -340,4 +331,5 @@
         )
         (write_file output-file converted-lines)
     )
+    "success"
 )
