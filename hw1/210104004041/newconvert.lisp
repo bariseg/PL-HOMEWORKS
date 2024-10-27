@@ -34,10 +34,10 @@
     (let*
         (
             (condition (second (cl-ppcre:split "\\s*while\\s*\\(" line)))
-            (condition (first (cl-ppcre:split "\\)" condition))) ; x < 10
-            (var (first (cl-ppcre:split "\\s+" condition))) ; x
-            (operator (second (cl-ppcre:split "\\s+" condition))) ; <
-            (limit (third (cl-ppcre:split "\\s+" condition))) ; 10
+            (condition-trimmed (first (cl-ppcre:split "\\)" condition))) ; x < 10
+            (var (first (cl-ppcre:split "\\s+" condition-trimmed))) ; x
+            (operator (second (cl-ppcre:split "\\s+" condition-trimmed))) ; <
+            (limit (third (cl-ppcre:split "\\s+" condition-trimmed))) ; 10
         )
         (format nil "(loop while (~a ~a ~a) do" operator var limit)
     )
@@ -50,21 +50,13 @@
             (parts (cl-ppcre:split "[();]" line))
             (initial (string-trim " " (nth 1 parts)))
             (condition (string-trim " " (nth 2 parts)))
-        )   
 
-        (let* 
-            (
-                (init-parts (cl-ppcre:split "\\s+" initial))
-                (var (second init-parts))
-                (init-value (fourth init-parts))
-            )  
+            (init-parts (cl-ppcre:split "\\s+" initial))
+            (var (second init-parts))
+            (init-value (fourth init-parts))
 
-            (let 
-                (
-                    (limit (second (cl-ppcre:split "\\s*<\\s*" condition)))
-                )  
-                (format nil "(loop for ~a from ~a below ~a do" var init-value limit)
-            )
+            (limit (second (cl-ppcre:split "\\s*<\\s*" condition)))
+            (format nil "(loop for ~a from ~a below ~a do" var init-value limit)
         )
     )
 )
@@ -119,8 +111,8 @@
     (types '()))
    
    (dolist (param params)
-    (let ((param  (first (cl-ppcre:split " " (string-trim " " param)))))
-      (push param types)
+    (let ((param-trimmed  (first (cl-ppcre:split " " (string-trim " " param)))))
+      (push param-trimmed types)
     )
    )
      (nreverse types)
@@ -182,6 +174,20 @@
     )
 )
 
+;done icinde #\) var
+(defun convert-function-call (line)
+    (let* 
+        (   
+            (split-line (cl-ppcre:split "\\s*\\(" line))
+            (function-name (first split-line))
+            (arguments (second split-line))
+            (arguments-trimmed (string-trim '(#\; #\)) arguments))
+            (arguments-cleaned (remove #\, arguments))
+        )
+        (format nil "(~a ~a)" function-name arguments-cleaned)
+    )
+)
+
 (defun convert-function-definition (line)
     (let* 
         (
@@ -196,19 +202,6 @@
     )
 )
 
-(defun convert-function-call (line)
-    (let* 
-        (   
-            (split-line (cl-ppcre:split "\\s*\\(" line))
-            (function-name (first split-line))
-            (arguments (second split-line))
-            (arguments (string-trim ";" arguments))
-            (arguments (string-trim ")" arguments))
-            (arguments (remove #\, arguments))
-        )
-        (format nil "(~a ~a)" function-name arguments)
-    )
-)
 
 (defun convert-if (line)
     (let* 
@@ -218,18 +211,6 @@
             )
         )
         (format nil "(if ~a" ifcondition)
-    )
-)
-
-
-(defun convert-assignment-by-function-return (line)
-    (let* 
-        (
-            (assignment-content (split-sequence:split-sequence #\= line))
-            (var (first assignment-content))
-            (function-call (second assignment-content))
-        )
-        (format nil "(setf ~a ~a)" var function-call)
     )
 )
 
@@ -246,8 +227,8 @@
         ((eq line-type 'close-brace) #'convert-closebrace)
         ((eq line-type 'for-loop) #'convert-for)
         ((eq line-type 'while-loop) #'convert-while)
-        ((eq line-type 'function-definition) #'convert-function-definition)
         ((eq line-type 'function-call) #'convert-function-call)
+        ;;((eq line-type 'function-definition) #'convert-function-definition)
         ;((eq line-type 'if-statement) #'convert-if)
         ;((eq line-type 'assignment-by-function-return) #'convert-assignment-by-function-return)
         (t #'convert-other)
