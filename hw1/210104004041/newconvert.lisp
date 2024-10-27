@@ -5,23 +5,49 @@
     (cond
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*;" line) 'function-declaration)
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*\\{" line) 'function-definition)
-        ((cl-ppcre:scan "[a-zA-Z_]+\\s*=\\s*[a-zA-Z_]+\\s*\\(.*\\)\\s*;" line) 'assignment-by-function-return) ; prior to function-call
+        ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s*=" line) 'assignment)
         ((cl-ppcre:scan "^\\s*\\w+\\s*\\(.*\\)\\s*;" line) 'function-call)
-        ((cl-ppcre:scan "\\s*for\\s*\\(" line) 'for-loop) ; prior to variable-definition
-        ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s+\\w+\\s*=\\s*\\w+\\s*;" line)  'variable-definition) 
-        ((cl-ppcre:scan "[a-zA-Z_]+\\s*=\\s*\\w+\\s*;" line) 'assignment)
+        ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s+\\w+\\s*=" line)  'variable-definition)
+        ((cl-ppcre:scan "\\s*for\\s*\\(" line) 'for-loop)
         ((cl-ppcre:scan "\\s*while\\s*\\(" line) 'while-loop)
 
+
         ;;((cl-ppcre:scan "if\\<s*\\(" line) 'if-statement)
-        ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*\\(" line) 'function-call)
-        ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*[\\+\\-\\*/%]+\\s*[a-zA-Z_]+" line) 'arithmetical-operation)
-        ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*[==|!=|<=|>=|<|>]\\s*[a-zA-Z_]+" line) 'logical-operation)
         ((cl-ppcre:scan "\\}" line) 'close-brace)
         (t 'unknown)
     )
 )
+
 ;(load "newconvert.lisp")
 ;(main "hoca-input.c" "output.lisp")
+
+
+(defun convert-arithmetic-operation (expression)
+    (print (format nil "~a" expression))
+    (let* 
+        (
+            (var1 (first (cl-ppcre:split "\\s+" expression))) ; x
+            (operator (second (cl-ppcre:split "\\s+" expression))) ; +
+            (var2 (third (cl-ppcre:split "\\s+" expression))) ; 10
+            
+        )
+        
+        (format nil "(~a ~a ~a)" operator var1 var2)
+    )
+)
+    
+(defun convert-logical-operation (expression)
+    (print (format nil "~a" expression))
+    (let* 
+        (
+            (var1 (first (cl-ppcre:split "\\s+" expression))) ; x
+            (operator (second (cl-ppcre:split "\\s+" expression))) ; <
+            (var2 (third (cl-ppcre:split "\\s+" expression))) ; 10
+            
+        )
+        (format nil "(~a ~a ~a)" operator var1 var2)
+    )
+)
 
 ;done
 (defun convert-closebrace (line)
@@ -33,13 +59,11 @@
 (defun convert-while (line)
     (let*
         (
-            (condition (second (cl-ppcre:split "\\s*while\\s*\\(" line)))
-            (condition-trimmed (first (cl-ppcre:split "\\)" condition))) ; x < 10
-            (var (first (cl-ppcre:split "\\s+" condition-trimmed))) ; x
-            (operator (second (cl-ppcre:split "\\s+" condition-trimmed))) ; <
-            (limit (third (cl-ppcre:split "\\s+" condition-trimmed))) ; 10
+            (condition (second (cl-ppcre:split "\\s*while\\s*\\(\\s*" line)))
+            (condition-trimmed (first (cl-ppcre:split "\\s*\\)" condition))) ; x < 10
+            (logical-operation (convert-logical-operation condition-trimmed))
         )
-        (format nil "(loop while (~a ~a ~a) do" operator var limit)
+        (format nil "(loop while ~a do" logical-operation)
     )
 )
 
@@ -78,21 +102,40 @@
         (format nil "(~a ~a)" var-name value)
     )
 )
+
 ;done
 (defun convert-assignment (line)
     (let* 
         (
-            (assignment-content (split-sequence:split-sequence #\= line))
+            (assignment-content (cl-ppcre:split "\\s*=\\s*" line :limit 2))
             (var (string-trim '(#\Newline #\Return #\Space #\Tab) (first assignment-content)))
-            (value 
-                (first 
-                    (cl-ppcre:split ";" (string-trim '(#\Newline #\Return #\Space #\Tab #\=) (second assignment-content)))
+            (trimmed-value (second assignment-content)) ;; .... ;
+            (value ;;  .... ;
+                (cond
+                    ((cl-ppcre:scan "[a-zA-Z_]+\\s*\\(.*\\)\\s*;" trimmed-value) (convert-function-call trimmed-value))
+                    ((cl-ppcre:scan "\\w+\\s*[\\+\\-\\*/%]{1}\\s*\\w+" trimmed-value) (convert-arithmetic-operation (remove #\; trimmed-value)))
+                    ((cl-ppcre:scan "\\w+\\s*(<|>|<=|>=|==|!=)\\s*\\w+" trimmed-value) (convert-logical-operation (remove #\; trimmed-value)))
+                    (t (first (cl-ppcre:split ";" (string-trim '(#\Newline #\Return #\Space #\Tab #\=) (second assignment-content)))))
                 )
             )
         )
         (format nil "(setf ~a ~a)" var value)
     )
 )
+
+;done
+(defun convert-assignment-by-function-return (line)
+    (let* 
+        (
+            (assignment-content (split-sequence:split-sequence #\= line))
+            (var (string-trim '(#\Newline #\Return #\Space #\Tab) (first assignment-content)))
+            (value (convert-function-call (string-trim "=" (second assignment-content))))
+        )
+        (format nil "(~a ~a)" var value)
+    )
+)
+
+
 ;helper
 (defun convert-type-to-lisp-version (type)
     (let ((lowercase-type (string-downcase type)))
@@ -189,18 +232,6 @@
     )
 )
 
-;done
-(defun convert-assignment-by-function-return (line)
-    (let* 
-        (
-            (assignment-content (split-sequence:split-sequence #\= line))
-            (var (string-trim '(#\Newline #\Return #\Space #\Tab) (first assignment-content)))
-
-            (value (convert-function-call (string-trim "=" (second assignment-content))))
-        )
-        (format nil "(~a ~a)" var value)
-    )
-)
 
 
 (defun convert-function-definition (line)
@@ -243,6 +274,8 @@
         ((eq line-type 'for-loop) #'convert-for)
         ((eq line-type 'while-loop) #'convert-while)
         ((eq line-type 'function-call) #'convert-function-call)
+        ((eq line-type 'arithmetical-operation) #'convert-arithmetic-operation)
+        ((eq line-type 'logical-operation) #'convert-logical-operation)
         ;;((eq line-type 'function-definition) #'convert-function-definition)
         ;((eq line-type 'if-statement) #'convert-if)
         ((eq line-type 'assignment-by-function-return) #'convert-assignment-by-function-return)
@@ -284,7 +317,8 @@
                 (line (first lines))
                 (line (clean-line line))
             )
-            (if (not (string= line ""))
+            (if (string= line "")
+                (cons "" (recursive_convert (rest lines)))
                 (let* 
                     (
                         (line-type-var (line-type line))
@@ -293,7 +327,6 @@
                     )
                     (cons converted-line (recursive_convert (rest lines)))
                 )
-                (recursive_convert (rest lines))
             )
         )
     )
