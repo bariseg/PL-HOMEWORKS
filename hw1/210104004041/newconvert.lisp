@@ -5,6 +5,7 @@
     (cond
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*;" line) 'function-declaration)
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*\\{" line) 'function-definition)
+        ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*=\\s*[a-zA-Z_]+\\(" line) 'assignment-by-function-return) ; prior to function-call
         ((cl-ppcre:scan "\\w+\\s*\\(.*\\)\\s*;" line) 'function-call)
         ((cl-ppcre:scan "\\s*for\\s*\\(" line) 'for-loop) ; prior to variable-definition
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*=\\s*\\w+\\s*;" line)  'variable-definition) 
@@ -12,7 +13,6 @@
         ((cl-ppcre:scan "\\s*while\\s*\\(" line) 'while-loop)
 
         ;;((cl-ppcre:scan "if\\<s*\\(" line) 'if-statement)
-        ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*=\\s*[a-zA-Z_]+\\(" line) 'assignment-by-function-return)
         ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*\\(" line) 'function-call)
         ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*[\\+\\-\\*/%]+\\s*[a-zA-Z_]+" line) 'arithmetical-operation)
         ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*[==|!=|<=|>=|<|>]\\s*[a-zA-Z_]+" line) 'logical-operation)
@@ -202,7 +202,9 @@
             (split-line (cl-ppcre:split "\\s*\\(" line))
             (function-name (first split-line))
             (arguments (second split-line))
-            (arguments (string-trim '(#\) #\; #\,) arguments))
+            (arguments (string-trim ";" arguments))
+            (arguments (string-trim ")" arguments))
+            (arguments (remove #\, arguments))
         )
         (format nil "(~a ~a)" function-name arguments)
     )
