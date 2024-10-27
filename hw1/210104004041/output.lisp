@@ -1,12 +1,14 @@
 (declaim (ftype (function (integer integer integer) integer) sum))
-(defun int sum(int
+unknown line type : int sum(int a, int b, int c) {
 unknown line type : return a + b;
 )
 (functioncall anan baban)
-(defun int main()
+unknown line type : int main() {
 (x 10)
 (y 20)
-(int result = sum x y 30)
+(a 30)
+(int result ( sum x y 30))
+(result ( sum x y 30))
 unknown line type : if (result > 25) {
 (printf "Result is greater than 25\n")
 (setf x 5)
@@ -15,7 +17,7 @@ unknown line type : if (result > 25) {
 (printf "%d\n" i)
 )
 (loop while (< x 100) do
-(a 10)
+(setf a 10)
 )
 unknown line type : return 0;
 )

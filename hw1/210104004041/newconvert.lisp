@@ -5,10 +5,10 @@
     (cond
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*;" line) 'function-declaration)
         ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*\\{" line) 'function-definition)
-        ;;((cl-ppcre:scan "[a-zA-Z_]+\\s*=\\s*[a-zA-Z_]+\\(" line) 'assignment-by-function-return) ; prior to function-call
-        ((cl-ppcre:scan "\\w+\\s*\\(.*\\)\\s*;" line) 'function-call)
+        ((cl-ppcre:scan "[a-zA-Z_]+\\s*=\\s*[a-zA-Z_]+\\s*\\(.*\\)\\s*;" line) 'assignment-by-function-return) ; prior to function-call
+        ((cl-ppcre:scan "^\\s*\\w+\\s*\\(.*\\)\\s*;" line) 'function-call)
         ((cl-ppcre:scan "\\s*for\\s*\\(" line) 'for-loop) ; prior to variable-definition
-        ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*=\\s*\\w+\\s*;" line)  'variable-definition) 
+        ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s+\\w+\\s*=\\s*\\w+\\s*;" line)  'variable-definition) 
         ((cl-ppcre:scan "[a-zA-Z_]+\\s*=\\s*\\w+\\s*;" line) 'assignment)
         ((cl-ppcre:scan "\\s*while\\s*\\(" line) 'while-loop)
 
@@ -56,8 +56,9 @@
             (init-value (fourth init-parts))
 
             (limit (second (cl-ppcre:split "\\s*<\\s*" condition)))
-            (format nil "(loop for ~a from ~a below ~a do" var init-value limit)
+            
         )
+    (format nil "(loop for ~a from ~a below ~a do" var init-value limit)
     )
 )
 
@@ -182,11 +183,25 @@
             (function-name (first split-line))
             (arguments (second split-line))
             (arguments-trimmed (string-trim '(#\; #\)) arguments))
-            (arguments-cleaned (remove #\, arguments))
+            (arguments-cleaned (remove #\, arguments-trimmed))
         )
         (format nil "(~a ~a)" function-name arguments-cleaned)
     )
 )
+
+;done
+(defun convert-assignment-by-function-return (line)
+    (let* 
+        (
+            (assignment-content (split-sequence:split-sequence #\= line))
+            (var (string-trim '(#\Newline #\Return #\Space #\Tab) (first assignment-content)))
+
+            (value (convert-function-call (string-trim "=" (second assignment-content))))
+        )
+        (format nil "(~a ~a)" var value)
+    )
+)
+
 
 (defun convert-function-definition (line)
     (let* 
@@ -230,7 +245,7 @@
         ((eq line-type 'function-call) #'convert-function-call)
         ;;((eq line-type 'function-definition) #'convert-function-definition)
         ;((eq line-type 'if-statement) #'convert-if)
-        ;((eq line-type 'assignment-by-function-return) #'convert-assignment-by-function-return)
+        ((eq line-type 'assignment-by-function-return) #'convert-assignment-by-function-return)
         (t #'convert-other)
     )
 )
