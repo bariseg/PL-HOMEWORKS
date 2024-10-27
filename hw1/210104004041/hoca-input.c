@@ -3,7 +3,7 @@ int sum(int a, char b, char c);
 int bos();
 
 int sum(int a, char b, char c) {
-    return a + b;
+    return sum(a, b, c);
 }
 
 functionname(par1, par2, par3, par4);

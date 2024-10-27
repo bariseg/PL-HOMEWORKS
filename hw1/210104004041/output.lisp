@@ -3,7 +3,7 @@
 (declaim (ftype (function ( ) integer) bos))
 
 (defun sum (a b c)
-(+ a b)
+(sum a b c)
 )
 
 (functionname par1 par2 par3 par4)
@@ -24,13 +24,13 @@
 (setf result (!= x y))
 
 
-unknown line type : if (result > 25) {
-(printf "Result is greater than 25\n")
+(if (> result 25)
+(format t "Result is greater than 25\n")
 (setf x 5)
 )
 
 (loop for i from 0 below 10 do
-(printf "%d\n" i)
+(format t "%d\n", i)
 )
 
 (loop while (< x 100) do

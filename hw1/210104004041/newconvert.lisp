@@ -3,15 +3,15 @@
 
 (defun line-type (line)
     (cond
-        ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*;" line) 'function-declaration)
-        ((cl-ppcre:scan "[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*\\{" line) 'function-definition)
+        ((cl-ppcre:scan "^\\s*return\\s+" line) 'return-statement) ; must be prior to function-declaration
+        ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*;" line) 'function-declaration)
+        ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s+\\w+\\s*\\(.*\\)\\s*\\{" line) 'function-definition)
         ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s*=" line) 'assignment) ; includes assigments by function call, arithmetic operation, logical operation
-        ((cl-ppcre:scan "^\\s*\\w+\\s*\\(.*\\)\\s*;" line) 'function-call)
+        ((cl-ppcre:scan "^\\s*\\w+\\s*\\(.*\\)\\s*;" line) 'function-call) ; includes printf, must be prior to if-statement
+        ((cl-ppcre:scan "^\\s*if\\s*\\(.*\\)\\s*{" line) 'if-statement)
         ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s+\\w+\\s*=" line)  'variable-definition)
         ((cl-ppcre:scan "\\s*for\\s*\\(" line) 'for-loop)
         ((cl-ppcre:scan "\\s*while\\s*\\(" line) 'while-loop)
-        ((cl-ppcre:scan "return" line) 'return-statement)
-        ;;((cl-ppcre:scan "if\\<s*\\(" line) 'if-statement)
         ((cl-ppcre:scan "\\}" line) 'close-brace)
         (t 'unknown)
     )
@@ -140,6 +140,7 @@
         )
     )
 )
+
 ;helper
 (defun parse-types-as-list-from-params-list (params)
     (let* 
@@ -203,6 +204,7 @@
     )
 )
 
+;done
 (defun convert-function-definition (line)
     (let* 
         (
@@ -233,24 +235,32 @@
             (split-line (cl-ppcre:split "\\s*\\(" line))
             (function-name (first split-line))
             (arguments (second split-line))
-            (arguments-trimmed (string-trim '(#\; #\)) arguments))
-            (arguments-cleaned (remove #\, arguments-trimmed))
+            (arguments-trimmed-half (string-trim ";" arguments))
+            (arguments-trimmed (string-trim ")" arguments-trimmed-half))
         )
-        (format nil "(~a ~a)" function-name arguments-cleaned)
+
+        (if (not (string= function-name "printf"))
+            (
+                let ((arguments-cleaned (remove #\, arguments-trimmed)))
+                (format nil "(~a ~a)" function-name arguments-cleaned)
+            )
+            (format nil "(format t ~a)" arguments-trimmed)
+        )
     )
 )
 
 (defun convert-if (line)
     (let* 
         (
-            (ifcondition 
-                (second (split-sequence:split-sequence #\Space (subseq line 0 (position #\{ line))))
-            )
+            (condition (second (cl-ppcre:split "\\s*if\\s*\\(" line)))
+            (condition-trimmed (first (cl-ppcre:split "\\s*\\)" condition))) ; x < 10
+            (logical-operation (convert-logical-operation condition-trimmed))
         )
-        (format nil "(if ~a" ifcondition)
+        (format nil "(if ~a" logical-operation)
     )
 )
 
+;done
 (defun convert-return (line)
     (let* 
         (
@@ -264,7 +274,7 @@
                 )
             )
         )
-        (print value)
+        (print return-expression)
         (format nil "~a" value)
     )
 )
@@ -286,7 +296,7 @@
         ((eq line-type 'logical-operation) #'convert-logical-operation)
         ((eq line-type 'function-definition) #'convert-function-definition)
         ((eq line-type 'return-statement) #'convert-return)
-        ;((eq line-type 'if-statement) #'convert-if)
+        ((eq line-type 'if-statement) #'convert-if)
         (t #'convert-other)
     )
 )
