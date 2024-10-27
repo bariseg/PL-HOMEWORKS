@@ -3,7 +3,7 @@
 (declaim (ftype (function ( ) integer) bos))
 
 (defun sum (a b c)
-unknown line type : return a + b;
+(+ a b)
 )
 
 (functionname par1 par2 par3 par4)
@@ -37,5 +37,5 @@ unknown line type : if (result > 25) {
 (setf a 10)
 )
 
-unknown line type : return 0;
+0
 )

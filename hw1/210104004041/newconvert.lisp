@@ -10,7 +10,7 @@
         ((cl-ppcre:scan "^\\s*[a-zA-Z_]+\\s+\\w+\\s*=" line)  'variable-definition)
         ((cl-ppcre:scan "\\s*for\\s*\\(" line) 'for-loop)
         ((cl-ppcre:scan "\\s*while\\s*\\(" line) 'while-loop)
-
+        ((cl-ppcre:scan "return" line) 'return-statement)
         ;;((cl-ppcre:scan "if\\<s*\\(" line) 'if-statement)
         ((cl-ppcre:scan "\\}" line) 'close-brace)
         (t 'unknown)
@@ -22,12 +22,12 @@
 
 ;done
 (defun convert-arithmetic-operation (expression)
+    (print expression)
     (let* 
         (
             (var1 (first (cl-ppcre:split "\\s+" expression))) ; x
             (operator (second (cl-ppcre:split "\\s+" expression))) ; +
             (var2 (third (cl-ppcre:split "\\s+" expression))) ; 10
-            
         )
         
         (format nil "(~a ~a ~a)" operator var1 var2)
@@ -240,7 +240,6 @@
     )
 )
 
-
 (defun convert-if (line)
     (let* 
         (
@@ -252,6 +251,23 @@
     )
 )
 
+(defun convert-return (line)
+    (let* 
+        (
+            (return-expression (second (cl-ppcre:split "return\\s*" line)))
+            (value ;;  .... ;
+                (cond
+                    ((cl-ppcre:scan "[a-zA-Z_]+\\s*\\(.*\\)\\s*;" return-expression) (convert-function-call return-expression))
+                    ((cl-ppcre:scan "\\w+\\s*[\\+\\-\\*/%]{1}\\s*\\w+" return-expression) (convert-arithmetic-operation (remove #\; return-expression)))
+                    ((cl-ppcre:scan "\\w+\\s*(<|>|<=|>=|==|!=)\\s*\\w+" return-expression) (convert-logical-operation (remove #\; return-expression)))
+                    (t (first (cl-ppcre:split ";" (string-trim '(#\Newline #\Return #\Space #\Tab #\=) return-expression))))
+                )
+            )
+        )
+        (print value)
+        (format nil "~a" value)
+    )
+)
 
 (defun convert-other (line)
   (format nil "unknown line type : ~a" line)
@@ -269,6 +285,7 @@
         ((eq line-type 'arithmetical-operation) #'convert-arithmetic-operation)
         ((eq line-type 'logical-operation) #'convert-logical-operation)
         ((eq line-type 'function-definition) #'convert-function-definition)
+        ((eq line-type 'return-statement) #'convert-return)
         ;((eq line-type 'if-statement) #'convert-if)
         (t #'convert-other)
     )
