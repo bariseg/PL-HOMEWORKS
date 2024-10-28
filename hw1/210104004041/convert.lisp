@@ -17,12 +17,12 @@
     )
 )
 
-;(load "newconvert.lisp")
-;(main "hoca-input.c" "output.lisp")
+;(load "convert.lisp")
+;(main "input.c" "output.lisp")
 
 ;done
 (defun convert-arithmetic-operation (expression)
-    (print expression)
+
     (let* 
         (
             (var1 (first (cl-ppcre:split "\\s+" expression))) ; x
@@ -85,6 +85,27 @@
 )
 
 ;done
+(defun convert-function-call (line)
+    (let* 
+        (   
+            (split-line (cl-ppcre:split "\\s*\\(" line))
+            (function-name (first split-line))
+            (arguments (second split-line))
+            (arguments-trimmed-half (string-trim ";" arguments))
+            (arguments-trimmed (string-trim ")" arguments-trimmed-half))
+        )
+
+        (if (not (string= function-name "printf"))
+            (
+                let ((arguments-cleaned (remove #\, arguments-trimmed)))
+                (format nil "(~a ~a)" function-name arguments-cleaned)
+            )
+            (format nil "(format t ~a)" arguments-trimmed)
+        )
+    )
+)
+
+;done
 (defun convert-variable-definition (line)
     (let* 
         (
@@ -128,7 +149,7 @@
 )
 
 ;helper
-(defun convert-type-to-lisp-version (type)
+(defun convert-types (type)
     (let ((lowercase-type (string-downcase type)))
         (cond
             ((string= lowercase-type "int") "integer")
@@ -142,7 +163,7 @@
 )
 
 ;helper
-(defun parse-types-as-list-from-params-list (params)
+(defun parse-types (params)
     (let* 
         (
             (types '())
@@ -182,19 +203,19 @@
             (parts (cl-ppcre:split " " line :limit 2)) ;ikiye ayirdik
             
             (return-type (first parts))
-            (converted-return-type (convert-type-to-lisp-version return-type))
+            (converted-return-type (convert-types return-type))
 
             (function-part (second parts))
             (function-name (first (cl-ppcre:split "\\(" function-part)))
 
             (params (parse-params-as-list-from-func function-part))
-            (types (parse-types-as-list-from-params-list params))
+            (types (parse-types params))
 
             (converted-types ;; for the immututability of the list we are creating a new list
                 (mapcar 
                     (
                         lambda (type) 
-                        (convert-type-to-lisp-version type)
+                        (convert-types type)
                     )
                     types
                 )
@@ -228,26 +249,6 @@
     )
 )
 
-;done icinde #\) var
-(defun convert-function-call (line)
-    (let* 
-        (   
-            (split-line (cl-ppcre:split "\\s*\\(" line))
-            (function-name (first split-line))
-            (arguments (second split-line))
-            (arguments-trimmed-half (string-trim ";" arguments))
-            (arguments-trimmed (string-trim ")" arguments-trimmed-half))
-        )
-
-        (if (not (string= function-name "printf"))
-            (
-                let ((arguments-cleaned (remove #\, arguments-trimmed)))
-                (format nil "(~a ~a)" function-name arguments-cleaned)
-            )
-            (format nil "(format t ~a)" arguments-trimmed)
-        )
-    )
-)
 
 (defun convert-if (line)
     (let* 
@@ -274,7 +275,6 @@
                 )
             )
         )
-        (print return-expression)
         (format nil "~a" value)
     )
 )
