@@ -1,4 +1,4 @@
-(ql:quickload '(:split-sequence :cl-ppcre))
+(ql:quickload '(:cl-ppcre))
 
 
 (defun line-type (line)
