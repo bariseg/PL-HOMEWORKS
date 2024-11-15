@@ -7,12 +7,11 @@ int yywrap() { return 1; }
 %}
 
 %%
-// Define rules for G++ tokens.
 
-// Comments
+[ \t\n\r]+          { }/* Ignore spaces, tabs, newlines, and carriage returns */
+
 ;;.*                { printf("COMMENT\n"); }
 
-// Keywords
 "and"               { printf("KW_AND\n"); }
 "or"                { printf("KW_OR\n"); }
 "not"               { printf("KW_NOT\n"); }
@@ -32,25 +31,20 @@ int yywrap() { return 1; }
 "true"              { printf("KW_TRUE\n"); }
 "false"             { printf("KW_FALSE\n"); }
 
-// Operators
-"\\+"               { printf("OP_PLUS\n"); }
-"\\-"               { printf("OP_MINUS\n"); }
-"\\*"               { printf("OP_MULT\n"); }
-"/"                 { printf("OP_DIV\n"); }
-"\\("               { printf("OP_OP\n"); }
-"\\)"               { printf("OP_CP\n"); }
-","                 { printf("OP_COMMA\n"); }
+[+]               { printf("OP_PLUS\n"); }
+[-]               { printf("OP_MINUS\n"); }
+[*]               { printf("OP_MULT\n"); }
+[/]                 { printf("OP_DIV\n"); }
+[(]               { printf("OP_OP\n"); }
+[)]               { printf("OP_CP\n"); }
+[,]                 { printf("OP_COMMA\n"); }
 
-// Literals
 [0-9]+:[0-9]+       { printf("VALUEF\n"); }  // Fractional values
 [0-9]+              { printf("VALUEI\n"); } // Integer values
 
-// Identifiers
-[a-zA-Z_][a-zA-Z0-9_]* {
-                        printf("IDENTIFIER\n");
-                     }
+[a-zA-Z_][a-zA-Z0-9_]* {printf("IDENTIFIER\n");}
 
-// Any unmatched character is a syntax error
+[0-9][a-zA-Z0-9]*   { printf("SYNTAX ERROR: %s cannot be tokenized\n",yytext); }
 .                   { printf("SYNTAX_ERROR: Unexpected character '%s'\n", yytext); }
 %%
 
