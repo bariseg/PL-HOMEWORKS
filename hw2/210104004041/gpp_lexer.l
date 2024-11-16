@@ -1,8 +1,5 @@
 %{
-#include <stdio.h>
-#include <string.h>
-
-// Flex requires yywrap to be defined. Return 1 to signal end of input.
+// Flex requires yywrap to be defined returning 1 fixed the problem.
 int yywrap() { return 1; }
 %}
 
@@ -40,6 +37,7 @@ int yywrap() { return 1; }
 [,]                 { printf("OP_COMMA\n"); }
 
 [0-9]+:[0-9]+       { printf("VALUEF\n"); }  // Fractional values
+[0-9]+f[0-9]+       { printf("VALUEF\n"); }  
 [0-9]+              { printf("VALUEI\n"); } // Integer values
 
 [a-zA-Z_][a-zA-Z0-9_]* {printf("IDENTIFIER\n");}
@@ -48,9 +46,8 @@ int yywrap() { return 1; }
 .                   { printf("SYNTAX_ERROR: Unexpected character '%s'\n", yytext); }
 %%
 
-// Main function
 int main() {
-    printf("Enter G++ code (Ctrl+D to exit):\n");
+    printf("Enter a G++ line :\n");
     yylex();
     return 0;
 }
