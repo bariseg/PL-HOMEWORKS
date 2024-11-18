@@ -149,6 +149,3 @@
         )
     )
 )
-
-gppinterpreter "test.txt"
-
