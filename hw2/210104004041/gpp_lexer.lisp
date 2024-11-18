@@ -7,7 +7,7 @@
 
 ;;(load "gpp_lexer.lisp")
 ;;(gppinterpreter)
-;;(gppinterpreter "test.gpp")
+;;(gppinterpreter "test.txt")
 
 
 ;;Classify a token as keyword, operator, literal, identifier, or syntax error.
@@ -120,7 +120,7 @@
 
 ;;(load "gpp_lexer.lisp")
 ;;(gppinterpreter)
-;;(gppinterpreter "test.gpp")
+;;(gppinterpreter "test.txt")
 
 
 
@@ -150,5 +150,5 @@
     )
 )
 
-
+gppinterpreter "test.txt"
 
