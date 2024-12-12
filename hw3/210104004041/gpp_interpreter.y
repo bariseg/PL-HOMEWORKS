@@ -58,11 +58,12 @@ void yyerror(const char *s){fprintf(stderr, "Error: %s\n", s);}
     struct Node *node;     // For parse tree nodes
 }
 
-%token <str> KW_AND KW_OR KW_NOT KW_EQUAL KW_LESS KW_NIL KW_LIST
-%token <str> KW_APPEND KW_CONCAT KW_SET KW_DEFFUN KW_FOR KW_IF KW_EXIT
-%token <str> KW_LOAD KW_PRINT KW_TRUE KW_FALSE KW_WHILE KW_DEFVAR
-%token <str> OP_PLUS OP_MINUS OP_DIV OP_MULT OP_OP OP_CP OP_COMMA
-%token <str> IDENTIFIER VALUEF VALUEI COMMENT
+%token <str> KW_AND KW_OR KW_NOT KW_EQUAL KW_LESS 
+%token <str> KW_SET KW_DEFFUN KW_FOR KW_IF 
+%token <str>  KW_WHILE KW_DEFVAR
+%token <str> OP_PLUS OP_MINUS OP_DIV OP_MULT OP_OP OP_CP 
+%token <str> IDENTIFIER VALUEF 
+//%token <str> VALUEI COMMENT KW_APPEND KW_CONCAT KW_EXIT OP_COMMA KW_NIL KW_LIST KW_LOAD KW_PRINT KW_TRUE KW_FALSE
 
 %type <node> start input expression expression_list identifier_list expression_boolean // list values
 
