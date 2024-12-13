@@ -933,29 +933,35 @@ YY_RULE_SETUP
 case 30:
 YY_RULE_SETUP
 #line 43 "gpp_lexer.l"
-{ return VALUEF; }  // Fractional values
+{ 
+                        char *p = strchr(yytext, ':');
+                        int numerator = atoi(yytext);
+                        int denominator = atoi(p+1);
+                        yylval.value = (double)numerator/denominator;
+                        return VALUEF; 
+                    }  // Fractional values
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 44 "gpp_lexer.l"
+#line 50 "gpp_lexer.l"
 { return VALUEI; }  // Integer values
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 46 "gpp_lexer.l"
+#line 52 "gpp_lexer.l"
 { return IDENTIFIER; } // Identifiers
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 48 "gpp_lexer.l"
+#line 54 "gpp_lexer.l"
 { printf("SYNTAX_ERROR: Unexpected character '%s'\n", yytext); }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 49 "gpp_lexer.l"
+#line 55 "gpp_lexer.l"
 ECHO;
 	YY_BREAK
-#line 958 "gpp_lexer.c"
+#line 964 "gpp_lexer.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1960,6 +1966,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 49 "gpp_lexer.l"
+#line 55 "gpp_lexer.l"
 
 

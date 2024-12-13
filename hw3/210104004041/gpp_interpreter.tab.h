@@ -44,32 +44,32 @@
      KW_NOT = 260,
      KW_EQUAL = 261,
      KW_LESS = 262,
-     KW_NIL = 263,
-     KW_LIST = 264,
-     KW_APPEND = 265,
-     KW_CONCAT = 266,
-     KW_SET = 267,
-     KW_DEFFUN = 268,
-     KW_FOR = 269,
-     KW_IF = 270,
-     KW_EXIT = 271,
-     KW_LOAD = 272,
-     KW_PRINT = 273,
-     KW_TRUE = 274,
-     KW_FALSE = 275,
-     KW_WHILE = 276,
-     KW_DEFVAR = 277,
-     OP_PLUS = 278,
-     OP_MINUS = 279,
-     OP_DIV = 280,
-     OP_MULT = 281,
-     OP_OP = 282,
-     OP_CP = 283,
-     OP_COMMA = 284,
-     IDENTIFIER = 285,
-     VALUEF = 286,
-     VALUEI = 287,
-     COMMENT = 288
+     KW_SET = 263,
+     KW_DEFFUN = 264,
+     KW_FOR = 265,
+     KW_IF = 266,
+     KW_WHILE = 267,
+     KW_DEFVAR = 268,
+     OP_PLUS = 269,
+     OP_MINUS = 270,
+     OP_DIV = 271,
+     OP_MULT = 272,
+     OP_OP = 273,
+     OP_CP = 274,
+     IDENTIFIER = 275,
+     VALUEF = 276,
+     VALUEI = 277,
+     COMMENT = 278,
+     KW_APPEND = 279,
+     KW_CONCAT = 280,
+     KW_EXIT = 281,
+     OP_COMMA = 282,
+     KW_NIL = 283,
+     KW_LIST = 284,
+     KW_LOAD = 285,
+     KW_PRINT = 286,
+     KW_TRUE = 287,
+     KW_FALSE = 288
    };
 #endif
 /* Tokens.  */
@@ -78,45 +78,46 @@
 #define KW_NOT 260
 #define KW_EQUAL 261
 #define KW_LESS 262
-#define KW_NIL 263
-#define KW_LIST 264
-#define KW_APPEND 265
-#define KW_CONCAT 266
-#define KW_SET 267
-#define KW_DEFFUN 268
-#define KW_FOR 269
-#define KW_IF 270
-#define KW_EXIT 271
-#define KW_LOAD 272
-#define KW_PRINT 273
-#define KW_TRUE 274
-#define KW_FALSE 275
-#define KW_WHILE 276
-#define KW_DEFVAR 277
-#define OP_PLUS 278
-#define OP_MINUS 279
-#define OP_DIV 280
-#define OP_MULT 281
-#define OP_OP 282
-#define OP_CP 283
-#define OP_COMMA 284
-#define IDENTIFIER 285
-#define VALUEF 286
-#define VALUEI 287
-#define COMMENT 288
+#define KW_SET 263
+#define KW_DEFFUN 264
+#define KW_FOR 265
+#define KW_IF 266
+#define KW_WHILE 267
+#define KW_DEFVAR 268
+#define OP_PLUS 269
+#define OP_MINUS 270
+#define OP_DIV 271
+#define OP_MULT 272
+#define OP_OP 273
+#define OP_CP 274
+#define IDENTIFIER 275
+#define VALUEF 276
+#define VALUEI 277
+#define COMMENT 278
+#define KW_APPEND 279
+#define KW_CONCAT 280
+#define KW_EXIT 281
+#define OP_COMMA 282
+#define KW_NIL 283
+#define KW_LIST 284
+#define KW_LOAD 285
+#define KW_PRINT 286
+#define KW_TRUE 287
+#define KW_FALSE 288
 
 
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 53 "gpp_interpreter.y"
+#line 56 "gpp_interpreter.y"
 {
     char *str;      // For token values
     struct Node *node;     // For parse tree nodes
+    double value;   // For fractional values
 }
 /* Line 1529 of yacc.c.  */
-#line 120 "gpp_interpreter.tab.h"
+#line 121 "gpp_interpreter.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

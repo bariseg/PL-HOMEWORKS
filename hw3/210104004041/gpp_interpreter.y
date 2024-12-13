@@ -3,19 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-double valuef_value = 12.2;
-int identifier_value = 4;
+
+int identifier_value = 0;
 
 
-// Parse Tree Node Structure
 typedef struct Node {
-    char *name;             // Name of the node (e.g. "expression", "identifier")
-    double value;           // Value of the node 
-    struct Node **children; // Array of child nodes
-    int child_count;        // Number of children
+    char *name;            
+    double value;           
+    struct Node **children; 
+    int child_count;    
 } Node;
 
-// Create a new tree node
+
 Node* createNode(const char *name,const double value ,int child_count) {
     Node *node = (Node *)malloc(sizeof(Node));
     node->name = strdup(name);
@@ -25,7 +24,7 @@ Node* createNode(const char *name,const double value ,int child_count) {
     return node;
 }
 
-// Free a tree node
+
 void freeNode(Node *node) {
     if (node) {
         for (int i = 0; i < node->child_count; i++) {
@@ -37,7 +36,7 @@ void freeNode(Node *node) {
     }
 }
 
-// Print the parse tree
+
 void printTree(Node *node, int depth) {
     if (!node) return;
     for (int i = 0; i < depth; i++) printf("| ");
@@ -54,16 +53,18 @@ void yyerror(const char *s){fprintf(stderr, "Error: %s\n", s);}
 %}
 
 %union {
-    char *str;      // For token values
-    struct Node *node;     // For parse tree nodes
+    char *str;      // for token values
+    struct Node *node;     // for parse tree nodes
+    double value;   // for fractional values
 }
 
 %token <str> KW_AND KW_OR KW_NOT KW_EQUAL KW_LESS 
 %token <str> KW_SET KW_DEFFUN KW_FOR KW_IF 
 %token <str>  KW_WHILE KW_DEFVAR
 %token <str> OP_PLUS OP_MINUS OP_DIV OP_MULT OP_OP OP_CP 
-%token <str> IDENTIFIER VALUEF 
-//%token <str> VALUEI COMMENT KW_APPEND KW_CONCAT KW_EXIT OP_COMMA KW_NIL KW_LIST KW_LOAD KW_PRINT KW_TRUE KW_FALSE
+%token <str> IDENTIFIER 
+%token <value> VALUEF
+%token <str> VALUEI COMMENT KW_APPEND KW_CONCAT KW_EXIT OP_COMMA KW_NIL KW_LIST KW_LOAD KW_PRINT KW_TRUE KW_FALSE
 
 %type <node> start input expression expression_list identifier_list expression_boolean // list values
 
@@ -122,13 +123,13 @@ expression:
         
     }
     | VALUEF {
-        $$ = createNode("expression(vf)", valuef_value, 1);
-        $$->children[0] = createNode("valuef", valuef_value, 0);
+        $$ = createNode("expression(vf)", yyval.value, 1);
+        $$->children[0] = createNode("valuef", yyval.value, 0);
     }
     //expression_i part
     |
     OP_OP KW_DEFFUN IDENTIFIER OP_OP identifier_list OP_CP expression_list OP_CP {//function definition
-        $$ = createNode("expression_i(deffun)", 0, 3);
+        $$ = createNode("expression_i(deffun)", $7->value, 3);
         $$->children[0] = createNode("identifier", identifier_value, 0);
         $$->children[1] = $5;
         $$->children[2] = $7;

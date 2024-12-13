@@ -3,15 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Parse Tree Node Structure
+
+int identifier_value = 0;
+
+
 typedef struct Node {
-    char *name;             // Name of the node (e.g. "expression", "identifier")
-    double value;           // Value of the node 
-    struct Node **children; // Array of child nodes
-    int child_count;        // Number of children
+    char *name;            
+    double value;           
+    struct Node **children; 
+    int child_count;    
 } Node;
 
-// Create a new tree node
+
 Node* createNode(const char *name,const double value ,int child_count) {
     Node *node = (Node *)malloc(sizeof(Node));
     node->name = strdup(name);
@@ -21,7 +24,7 @@ Node* createNode(const char *name,const double value ,int child_count) {
     return node;
 }
 
-// Free a tree node
+
 void freeNode(Node *node) {
     if (node) {
         for (int i = 0; i < node->child_count; i++) {
@@ -33,7 +36,7 @@ void freeNode(Node *node) {
     }
 }
 
-// Print the parse tree
+
 void printTree(Node *node, int depth) {
     if (!node) return;
     for (int i = 0; i < depth; i++) printf("| ");
@@ -50,17 +53,20 @@ void yyerror(const char *s){fprintf(stderr, "Error: %s\n", s);}
 %}
 
 %union {
-    char *str;      // For token values
-    struct Node *node;     // For parse tree nodes
+    char *str;      // for token values
+    struct Node *node;     // for parse tree nodes
+    double value;   // for fractional values
 }
 
-%token <str> KW_AND KW_OR KW_NOT KW_EQUAL KW_LESS KW_NIL KW_LIST
-%token <str> KW_APPEND KW_CONCAT KW_SET KW_DEFFUN KW_FOR KW_IF KW_EXIT
-%token <str> KW_LOAD KW_PRINT KW_TRUE KW_FALSE KW_WHILE KW_DEFVAR
-%token <str> OP_PLUS OP_MINUS OP_DIV OP_MULT OP_OP OP_CP OP_COMMA
-%token <str> IDENTIFIER VALUEF VALUEI COMMENT
+%token <str> KW_AND KW_OR KW_NOT KW_EQUAL KW_LESS 
+%token <str> KW_SET KW_DEFFUN KW_FOR KW_IF 
+%token <str>  KW_WHILE KW_DEFVAR
+%token <str> OP_PLUS OP_MINUS OP_DIV OP_MULT OP_OP OP_CP 
+%token <str> IDENTIFIER 
+%token <value> VALUEF
+%token <str> VALUEI COMMENT KW_APPEND KW_CONCAT KW_EXIT OP_COMMA KW_NIL KW_LIST KW_LOAD KW_PRINT KW_TRUE KW_FALSE
 
-%type <node> start input expression expression_list expression_list_i expression_i identifier_list expression_boolean // list values
+%type <node> start input expression expression_list identifier_list expression_boolean // list values
 
 // bison -d gpp_interpreter.y
 // flex -o gpp_lexer.c gpp_lexer.l
@@ -79,10 +85,6 @@ start:
 input:
     expression_list{ 
         $$ = createNode("input", $1->value, 1);
-        $$->children[0] = $1;
-    }
-    | expression_list_i{
-        $$ = createNode("expression_list_i", $1->value, 1);
         $$->children[0] = $1;
     }
 ;
@@ -110,20 +112,63 @@ expression:
         $$->children[0] = $3;
         $$->children[1] = $4;
     }
-    | OP_OP KW_SET IDENTIFIER expression_list OP_CP{
+    | OP_OP KW_SET IDENTIFIER expression OP_CP{
         $$ = createNode("expression(set)", $4->value, 2);
-        $$->children[0] = createNode("identifier", 1, 0);
+        $$->children[0] = createNode("identifier", identifier_value, 0);
         $$->children[1] = $4;
     }
     | IDENTIFIER{
-        $$ = createNode("expression(id)", 1, 1);
-        $$->children[0] = createNode("identifier", 1, 0);
+        $$ = createNode("expression(id)", identifier_value, 1);
+        $$->children[0] = createNode("identifier", identifier_value, 0);
         
     }
     | VALUEF {
-        $$ = createNode("expression(vf)", 12.2, 1);
-        $$->children[0] = createNode("valuef", 12.2, 0);
+        $$ = createNode("expression(vf)", yyval.value, 1);
+        $$->children[0] = createNode("valuef", yyval.value, 0);
     }
+    //expression_i part
+    |
+    OP_OP KW_DEFFUN IDENTIFIER OP_OP identifier_list OP_CP expression_list OP_CP {//function definition
+        $$ = createNode("expression_i(deffun)", $7->value, 3);
+        $$->children[0] = createNode("identifier", identifier_value, 0);
+        $$->children[1] = $5;
+        $$->children[2] = $7;
+    } 
+    // i think it is impossible to implement the function call returning the last expression value
+    | OP_OP IDENTIFIER expression_list OP_CP {//function call. actually returns the value of the rightmost parameter
+        $$ = createNode("expression_i(fcall)", $3->value, 2);
+        $$->children[0] = createNode("identifier", identifier_value, 0);
+        $$->children[1] = $3;
+    }
+    | OP_OP KW_IF expression_boolean expression_list OP_CP {//if statement. returns the value of the boolean expression
+        $$ = createNode("expression_i(if)", $3->value, 2);
+        $$->children[0] = $3;
+        $$->children[1] = $4;
+    }
+    | OP_OP KW_IF expression_boolean expression_list expression_list OP_CP {//if-else statement
+        $$ = createNode("expression_i(if_else)", $3->value, 3);
+        $$->children[0] = $3;
+        $$->children[1] = $4;
+        $$->children[2] = $5;
+    }
+    | OP_OP KW_WHILE expression_boolean expression_list OP_CP {//while loop
+        $$ = createNode("expression_i(while)", $3->value, 2);
+        $$->children[0] = $3;
+        $$->children[1] = $4;
+    }
+    | OP_OP KW_FOR OP_OP IDENTIFIER expression expression OP_CP expression_list OP_CP {//for loop, returns the value of the last expression
+        $$ = createNode("expression_i(for)", $8->value, 4);
+        $$->children[0] = createNode("identifier", identifier_value, 0);
+        $$->children[1] = $5;
+        $$->children[2] = $6;
+        $$->children[3] = $8;
+    }
+    | OP_OP KW_DEFVAR IDENTIFIER expression OP_CP {//variable declaration. returns the value of the expression_i, which is the value of the variable
+        $$ = createNode("expression_i(defvar)", $4->value, 2);
+        $$->children[0] = createNode("identifier", identifier_value, 0);
+        $$->children[1] = $4;
+    }
+
 ;
 
 expression_list:
@@ -134,68 +179,6 @@ expression_list:
     }
     | expression{
         $$ = createNode("expression_list", $1->value, 1);
-        $$->children[0] = $1;
-    }
-;
-
-expression_i:
-    OP_OP KW_DEFFUN IDENTIFIER OP_OP identifier_list OP_CP expression_list_i OP_CP {//function definition
-        $$ = createNode("expression_i(deffun)", 0, 3);
-        $$->children[0] = createNode("identifier", 1, 0);
-        $$->children[1] = $5;
-        $$->children[2] = $7;
-    } 
-    // i think it is impossible to implement the function call returning the last expression value
-    | OP_OP IDENTIFIER expression_list_i OP_CP {//function call. actually returns the value of the rightmost parameter
-        $$ = createNode("expression_i(fcall)", $3->value, 2);
-        $$->children[0] = createNode("identifier", 1, 0);
-        $$->children[1] = $3;
-    }
-    | OP_OP KW_IF expression_boolean expression_list_i OP_CP {//if statement. returns the value of the boolean expression
-        $$ = createNode("expression_i(if)", $3->value, 2);
-        $$->children[0] = $3;
-        $$->children[1] = $4;
-    }
-    | OP_OP KW_IF expression_boolean expression_list_i expression_list_i OP_CP {//if-else statement
-        $$ = createNode("expression_i(if_else)", $3->value, 3);
-        $$->children[0] = $3;
-        $$->children[1] = $4;
-        $$->children[2] = $5;
-    }
-    | OP_OP KW_WHILE expression_boolean expression_list_i OP_CP {//while loop
-        $$ = createNode("expression_i(while)", $3->value, 2);
-        $$->children[0] = $3;
-        $$->children[1] = $4;
-    }
-    | OP_OP KW_FOR OP_OP IDENTIFIER expression_i expression_i OP_CP expression_list_i OP_CP {//for loop, returns the value of the last expression
-        $$ = createNode("expression_i(for)", $8->value, 4);
-        $$->children[0] = createNode("identifier", 1, 0);
-        $$->children[1] = $5;
-        $$->children[2] = $6;
-        $$->children[3] = $8;
-    }
-    | OP_OP KW_DEFVAR IDENTIFIER expression_i OP_CP {//variable declaration. returns the value of the expression_i, which is the value of the variable
-        $$ = createNode("expression_i(defvar)", $4->value, 2);
-        $$->children[0] = createNode("identifier", 1, 0);
-        $$->children[1] = $4;
-    }
-    | OP_OP KW_SET IDENTIFIER expression_i OP_CP {//variable assignment
-        $$ = createNode("expression_i(set)", $4->value, 2);
-        $$->children[0] = createNode("identifier", 1, 0);
-        $$->children[1] = $4;
-    }
-
-;
-
-
-expression_list_i:
-    expression_list_i expression_i {
-        $$ = createNode("expression_list_i", $2->value, 2);
-        $$->children[0] = $1;
-        $$->children[1] = $2;
-    }
-    | expression_i{
-        $$ = createNode("expression_list_i", $1->value, 1);
         $$->children[0] = $1;
     }
 ;
@@ -226,17 +209,18 @@ expression_boolean:
         $$->children[0] = $3;
         $$->children[1] = $4;
     }
-    ;
+;
+
 
 identifier_list:
     identifier_list IDENTIFIER {
-        $$ = createNode("identifier_list", $2->value, 2);
-        $$->children[0] = $2;
-        $$->children[1] = createNode("identifier", 1, 0);
+        $$ = createNode("identifier_list", identifier_value, 2);
+        $$->children[0] = $1;
+        $$->children[1] = createNode("identifier", identifier_value, 0);
     }
     | IDENTIFIER{
-        $$ = createNode("identifier_list", 1);
-        $$->children[0] = createNode("identifier", 1, 0);
+        $$ = createNode("identifier_list", identifier_value, 1);
+        $$->children[0] = createNode("identifier", identifier_value, 0);
     }
     
 ;

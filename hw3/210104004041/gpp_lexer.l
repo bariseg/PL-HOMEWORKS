@@ -39,7 +39,13 @@ int yywrap() { return 1; }
 ")"                 { return OP_CP; }
 ","                 { return OP_COMMA; }
 
-[0-9]+:[0-9]+       { return VALUEF; }  // Fractional values
+[0-9]+:[0-9]+       { 
+                        char *p = strchr(yytext, ':');
+                        int numerator = atoi(yytext);
+                        int denominator = atoi(p+1);
+                        yylval.value = (double)numerator/denominator;
+                        return VALUEF; 
+                    }  // Fractional values
 [0-9]+              { return VALUEI; }  // Integer values
 
 [a-zA-Z_][a-zA-Z0-9_]* { return IDENTIFIER; } // Identifiers

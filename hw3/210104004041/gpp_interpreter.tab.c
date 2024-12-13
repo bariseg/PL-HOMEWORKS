@@ -71,32 +71,32 @@
      KW_NOT = 260,
      KW_EQUAL = 261,
      KW_LESS = 262,
-     KW_NIL = 263,
-     KW_LIST = 264,
-     KW_APPEND = 265,
-     KW_CONCAT = 266,
-     KW_SET = 267,
-     KW_DEFFUN = 268,
-     KW_FOR = 269,
-     KW_IF = 270,
-     KW_EXIT = 271,
-     KW_LOAD = 272,
-     KW_PRINT = 273,
-     KW_TRUE = 274,
-     KW_FALSE = 275,
-     KW_WHILE = 276,
-     KW_DEFVAR = 277,
-     OP_PLUS = 278,
-     OP_MINUS = 279,
-     OP_DIV = 280,
-     OP_MULT = 281,
-     OP_OP = 282,
-     OP_CP = 283,
-     OP_COMMA = 284,
-     IDENTIFIER = 285,
-     VALUEF = 286,
-     VALUEI = 287,
-     COMMENT = 288
+     KW_SET = 263,
+     KW_DEFFUN = 264,
+     KW_FOR = 265,
+     KW_IF = 266,
+     KW_WHILE = 267,
+     KW_DEFVAR = 268,
+     OP_PLUS = 269,
+     OP_MINUS = 270,
+     OP_DIV = 271,
+     OP_MULT = 272,
+     OP_OP = 273,
+     OP_CP = 274,
+     IDENTIFIER = 275,
+     VALUEF = 276,
+     VALUEI = 277,
+     COMMENT = 278,
+     KW_APPEND = 279,
+     KW_CONCAT = 280,
+     KW_EXIT = 281,
+     OP_COMMA = 282,
+     KW_NIL = 283,
+     KW_LIST = 284,
+     KW_LOAD = 285,
+     KW_PRINT = 286,
+     KW_TRUE = 287,
+     KW_FALSE = 288
    };
 #endif
 /* Tokens.  */
@@ -105,32 +105,32 @@
 #define KW_NOT 260
 #define KW_EQUAL 261
 #define KW_LESS 262
-#define KW_NIL 263
-#define KW_LIST 264
-#define KW_APPEND 265
-#define KW_CONCAT 266
-#define KW_SET 267
-#define KW_DEFFUN 268
-#define KW_FOR 269
-#define KW_IF 270
-#define KW_EXIT 271
-#define KW_LOAD 272
-#define KW_PRINT 273
-#define KW_TRUE 274
-#define KW_FALSE 275
-#define KW_WHILE 276
-#define KW_DEFVAR 277
-#define OP_PLUS 278
-#define OP_MINUS 279
-#define OP_DIV 280
-#define OP_MULT 281
-#define OP_OP 282
-#define OP_CP 283
-#define OP_COMMA 284
-#define IDENTIFIER 285
-#define VALUEF 286
-#define VALUEI 287
-#define COMMENT 288
+#define KW_SET 263
+#define KW_DEFFUN 264
+#define KW_FOR 265
+#define KW_IF 266
+#define KW_WHILE 267
+#define KW_DEFVAR 268
+#define OP_PLUS 269
+#define OP_MINUS 270
+#define OP_DIV 271
+#define OP_MULT 272
+#define OP_OP 273
+#define OP_CP 274
+#define IDENTIFIER 275
+#define VALUEF 276
+#define VALUEI 277
+#define COMMENT 278
+#define KW_APPEND 279
+#define KW_CONCAT 280
+#define KW_EXIT 281
+#define OP_COMMA 282
+#define KW_NIL 283
+#define KW_LIST 284
+#define KW_LOAD 285
+#define KW_PRINT 286
+#define KW_TRUE 287
+#define KW_FALSE 288
 
 
 
@@ -143,7 +143,7 @@
 #include <string.h>
 
 double valuef_value = 12.2;
-int identifier_value = 4;
+int identifier_value = 0;
 
 
 // Parse Tree Node Structure
@@ -216,9 +216,10 @@ typedef union YYSTYPE
 {
     char *str;      // For token values
     struct Node *node;     // For parse tree nodes
+    double value;   // For fractional values
 }
 /* Line 193 of yacc.c.  */
-#line 222 "gpp_interpreter.tab.c"
+#line 223 "gpp_interpreter.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -231,7 +232,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 235 "gpp_interpreter.tab.c"
+#line 236 "gpp_interpreter.tab.c"
 
 #ifdef short
 # undef short
@@ -446,7 +447,7 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  19
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   101
+#define YYLAST   100
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  34
@@ -511,27 +512,27 @@ static const yytype_uint8 yyprhs[] =
 /* YYRHS -- A `-1'-separated list of the rules' RHS.  */
 static const yytype_int8 yyrhs[] =
 {
-      35,     0,    -1,    36,    -1,    38,    -1,    27,    23,    37,
-      37,    28,    -1,    27,    24,    37,    37,    28,    -1,    27,
-      26,    37,    37,    28,    -1,    27,    25,    37,    37,    28,
-      -1,    27,    12,    30,    37,    28,    -1,    30,    -1,    31,
-      -1,    27,    13,    30,    27,    40,    28,    38,    28,    -1,
-      27,    30,    38,    28,    -1,    27,    15,    39,    38,    28,
-      -1,    27,    15,    39,    38,    38,    28,    -1,    27,    21,
-      39,    38,    28,    -1,    27,    14,    27,    30,    37,    37,
-      28,    38,    28,    -1,    27,    22,    30,    37,    28,    -1,
-      38,    37,    -1,    37,    -1,    27,     3,    37,    37,    28,
-      -1,    27,     4,    37,    37,    28,    -1,    27,     5,    37,
-      28,    -1,    27,     6,    37,    37,    28,    -1,    27,     7,
-      37,    37,    28,    -1,    40,    30,    -1,    30,    -1
+      35,     0,    -1,    36,    -1,    38,    -1,    18,    14,    37,
+      37,    19,    -1,    18,    15,    37,    37,    19,    -1,    18,
+      17,    37,    37,    19,    -1,    18,    16,    37,    37,    19,
+      -1,    18,     8,    20,    37,    19,    -1,    20,    -1,    21,
+      -1,    18,     9,    20,    18,    40,    19,    38,    19,    -1,
+      18,    20,    38,    19,    -1,    18,    11,    39,    38,    19,
+      -1,    18,    11,    39,    38,    38,    19,    -1,    18,    12,
+      39,    38,    19,    -1,    18,    10,    18,    20,    37,    37,
+      19,    38,    19,    -1,    18,    13,    20,    37,    19,    -1,
+      38,    37,    -1,    37,    -1,    18,     3,    37,    37,    19,
+      -1,    18,     4,    37,    37,    19,    -1,    18,     5,    37,
+      19,    -1,    18,     6,    37,    37,    19,    -1,    18,     7,
+      37,    37,    19,    -1,    40,    20,    -1,    20,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    77,    77,    84,    91,    96,   101,   108,   113,   118,
-     123,   129,   136,   141,   146,   152,   157,   164,   173,   178,
-     186,   191,   196,   200,   205,   214,   219
+       0,    80,    80,    87,    94,    99,   104,   111,   116,   121,
+     126,   132,   139,   144,   149,   155,   160,   167,   176,   181,
+     189,   194,   199,   203,   208,   217,   222
 };
 #endif
 
@@ -541,12 +542,12 @@ static const yytype_uint8 yyrline[] =
 static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "KW_AND", "KW_OR", "KW_NOT", "KW_EQUAL",
-  "KW_LESS", "KW_NIL", "KW_LIST", "KW_APPEND", "KW_CONCAT", "KW_SET",
-  "KW_DEFFUN", "KW_FOR", "KW_IF", "KW_EXIT", "KW_LOAD", "KW_PRINT",
-  "KW_TRUE", "KW_FALSE", "KW_WHILE", "KW_DEFVAR", "OP_PLUS", "OP_MINUS",
-  "OP_DIV", "OP_MULT", "OP_OP", "OP_CP", "OP_COMMA", "IDENTIFIER",
-  "VALUEF", "VALUEI", "COMMENT", "$accept", "start", "input", "expression",
-  "expression_list", "expression_boolean", "identifier_list", 0
+  "KW_LESS", "KW_SET", "KW_DEFFUN", "KW_FOR", "KW_IF", "KW_WHILE",
+  "KW_DEFVAR", "OP_PLUS", "OP_MINUS", "OP_DIV", "OP_MULT", "OP_OP",
+  "OP_CP", "IDENTIFIER", "VALUEF", "VALUEI", "COMMENT", "KW_APPEND",
+  "KW_CONCAT", "KW_EXIT", "OP_COMMA", "KW_NIL", "KW_LIST", "KW_LOAD",
+  "KW_PRINT", "KW_TRUE", "KW_FALSE", "$accept", "start", "input",
+  "expression", "expression_list", "expression_boolean", "identifier_list", 0
 };
 #endif
 
@@ -602,24 +603,24 @@ static const yytype_int8 yydefgoto[] =
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-#define YYPACT_NINF -20
+#define YYPACT_NINF -9
 static const yytype_int8 yypact[] =
 {
-      60,    49,   -20,   -20,     6,   -20,   -20,    60,   -19,   -13,
-      -9,    11,    11,    14,    60,    60,    60,    60,    60,   -20,
-     -20,    60,    21,    28,    -2,    60,    60,    60,    60,    60,
-      60,    60,   -15,    37,    36,    60,    60,    60,    60,    60,
-      60,     9,    24,    39,    54,    64,    65,    66,   -20,   -20,
-     -20,    13,    60,    60,    60,    67,    60,    60,   -20,   -20,
-      29,   -20,   -20,   -20,   -20,   -20,   -20,    60,   -20,    68,
-      69,    70,   -20,    71,    72,   -20,    53,    60,   -20,   -20,
-     -20,   -20,   -20,    58,   -20
+      23,    46,    -9,    -9,     6,    -9,    -9,    23,    20,    28,
+      -5,    33,    33,    32,    23,    23,    23,    23,    23,    -9,
+      -9,    23,    47,    44,    -2,    23,    23,    23,    23,    23,
+      23,    23,    -3,    48,    54,    23,    23,    23,    23,    23,
+      23,    18,    52,    56,    58,    72,    73,    74,    -9,    -9,
+      -9,    -8,    23,    23,    23,    75,    23,    23,    -9,    -9,
+      61,    -9,    -9,    -9,    -9,    -9,    -9,    23,    -9,    76,
+      77,    78,    -9,    79,    80,    -9,    65,    23,    -9,    -9,
+      -9,    -9,    -9,    69,    -9
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -20,   -20,   -20,    -7,     1,    89,   -20
+      -9,    -9,    -9,    -7,     1,    88,    -9
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
@@ -630,46 +631,46 @@ static const yytype_int8 yypgoto[] =
 static const yytype_uint8 yytable[] =
 {
       20,    36,    37,    38,    39,    40,    19,    28,    29,    30,
-      31,    21,     1,    48,    33,     2,     3,    22,    23,    32,
+      31,    67,    68,    23,    33,     1,    48,     2,     3,    32,
       43,    44,    45,    46,    47,    20,    41,    42,    52,    53,
-      54,    55,    56,    57,    59,    20,     1,    58,    24,     2,
-       3,    67,    60,    68,    27,    69,    70,    71,    34,    73,
-      74,     1,    61,    20,     2,     3,     1,    75,    35,     2,
-       3,     8,     9,    10,    11,    49,    50,    62,    76,    20,
-      12,    13,    14,    15,    16,    17,    20,     0,    83,    18,
-       1,    82,    63,     2,     3,     1,    84,     1,     2,     3,
-       2,     3,    64,    65,    66,    72,    77,    78,    79,    80,
-      81,    26
+      54,    55,    56,    57,    59,    20,     1,    58,     2,     3,
+      21,     1,    60,     2,     3,    69,    70,    71,    22,    73,
+      74,    24,    27,    20,     8,     9,    10,    11,    12,    13,
+      14,    15,    16,    17,    35,    34,    18,    49,    76,    20,
+       1,    61,     2,     3,    50,    62,    20,    63,    83,     1,
+      75,     2,     3,     1,    82,     2,     3,     1,    84,     2,
+       3,    64,    65,    66,    72,    77,    78,    79,    80,    81,
+      26
 };
 
-static const yytype_int8 yycheck[] =
+static const yytype_uint8 yycheck[] =
 {
        7,     3,     4,     5,     6,     7,     0,    14,    15,    16,
-      17,    30,    27,    28,    21,    30,    31,    30,    27,    18,
+      17,    19,    20,    18,    21,    18,    19,    20,    21,    18,
       27,    28,    29,    30,    31,    32,    25,    26,    35,    36,
-      37,    38,    39,    40,    41,    42,    27,    28,    27,    30,
-      31,    28,    41,    30,    30,    52,    53,    54,    27,    56,
-      57,    27,    28,    60,    30,    31,    27,    28,    30,    30,
-      31,    12,    13,    14,    15,    28,    30,    28,    67,    76,
-      21,    22,    23,    24,    25,    26,    83,    -1,    77,    30,
-      27,    28,    28,    30,    31,    27,    28,    27,    30,    31,
-      30,    31,    28,    28,    28,    28,    28,    28,    28,    28,
-      28,    12
+      37,    38,    39,    40,    41,    42,    18,    19,    20,    21,
+      20,    18,    41,    20,    21,    52,    53,    54,    20,    56,
+      57,    18,    20,    60,     8,     9,    10,    11,    12,    13,
+      14,    15,    16,    17,    20,    18,    20,    19,    67,    76,
+      18,    19,    20,    21,    20,    19,    83,    19,    77,    18,
+      19,    20,    21,    18,    19,    20,    21,    18,    19,    20,
+      21,    19,    19,    19,    19,    19,    19,    19,    19,    19,
+      12
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
    symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,    27,    30,    31,    35,    36,    37,    38,    12,    13,
-      14,    15,    21,    22,    23,    24,    25,    26,    30,     0,
-      37,    30,    30,    27,    27,    39,    39,    30,    37,    37,
-      37,    37,    38,    37,    27,    30,     3,     4,     5,     6,
-       7,    38,    38,    37,    37,    37,    37,    37,    28,    28,
-      30,    40,    37,    37,    37,    37,    37,    37,    28,    37,
-      38,    28,    28,    28,    28,    28,    28,    28,    30,    37,
-      37,    37,    28,    37,    37,    28,    38,    28,    28,    28,
-      28,    28,    28,    38,    28
+       0,    18,    20,    21,    35,    36,    37,    38,     8,     9,
+      10,    11,    12,    13,    14,    15,    16,    17,    20,     0,
+      37,    20,    20,    18,    18,    39,    39,    20,    37,    37,
+      37,    37,    38,    37,    18,    20,     3,     4,     5,     6,
+       7,    38,    38,    37,    37,    37,    37,    37,    19,    19,
+      20,    40,    37,    37,    37,    37,    37,    37,    19,    37,
+      38,    19,    19,    19,    19,    19,    19,    19,    20,    37,
+      37,    37,    19,    37,    37,    19,    38,    19,    19,    19,
+      19,    19,    19,    38,    19
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -1484,7 +1485,7 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 77 "gpp_interpreter.y"
+#line 80 "gpp_interpreter.y"
     {
         root = createNode("start", (yyvsp[(1) - (1)].node)->value, 1);
         root->children[0] = (yyvsp[(1) - (1)].node);
@@ -1492,7 +1493,7 @@ yyreduce:
     break;
 
   case 3:
-#line 84 "gpp_interpreter.y"
+#line 87 "gpp_interpreter.y"
     { 
         (yyval.node) = createNode("input", (yyvsp[(1) - (1)].node)->value, 1);
         (yyval.node)->children[0] = (yyvsp[(1) - (1)].node);
@@ -1500,7 +1501,7 @@ yyreduce:
     break;
 
   case 4:
-#line 91 "gpp_interpreter.y"
+#line 94 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression(plus)", ((yyvsp[(3) - (5)].node)->value) + ((yyvsp[(4) - (5)].node)->value), 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1509,7 +1510,7 @@ yyreduce:
     break;
 
   case 5:
-#line 96 "gpp_interpreter.y"
+#line 99 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression(minus)", ((yyvsp[(3) - (5)].node)->value) - ((yyvsp[(4) - (5)].node)->value), 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1518,7 +1519,7 @@ yyreduce:
     break;
 
   case 6:
-#line 101 "gpp_interpreter.y"
+#line 104 "gpp_interpreter.y"
     {
 
         (yyval.node) = createNode("expression(mult)", ((yyvsp[(3) - (5)].node)->value) * ((yyvsp[(4) - (5)].node)->value), 2);
@@ -1529,7 +1530,7 @@ yyreduce:
     break;
 
   case 7:
-#line 108 "gpp_interpreter.y"
+#line 111 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression(div)", ((yyvsp[(3) - (5)].node)->value) / ((yyvsp[(4) - (5)].node)->value), 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1538,7 +1539,7 @@ yyreduce:
     break;
 
   case 8:
-#line 113 "gpp_interpreter.y"
+#line 116 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression(set)", (yyvsp[(4) - (5)].node)->value, 2);
         (yyval.node)->children[0] = createNode("identifier", identifier_value, 0);
@@ -1547,7 +1548,7 @@ yyreduce:
     break;
 
   case 9:
-#line 118 "gpp_interpreter.y"
+#line 121 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression(id)", identifier_value, 1);
         (yyval.node)->children[0] = createNode("identifier", identifier_value, 0);
@@ -1556,17 +1557,17 @@ yyreduce:
     break;
 
   case 10:
-#line 123 "gpp_interpreter.y"
+#line 126 "gpp_interpreter.y"
     {
-        (yyval.node) = createNode("expression(vf)", valuef_value, 1);
-        (yyval.node)->children[0] = createNode("valuef", valuef_value, 0);
+        (yyval.node) = createNode("expression(vf)", yyval.value, 1);
+        (yyval.node)->children[0] = createNode("valuef", yyval.value, 0);
     ;}
     break;
 
   case 11:
-#line 129 "gpp_interpreter.y"
+#line 132 "gpp_interpreter.y"
     {//function definition
-        (yyval.node) = createNode("expression_i(deffun)", 0, 3);
+        (yyval.node) = createNode("expression_i(deffun)", (yyvsp[(7) - (8)].node)->value, 3);
         (yyval.node)->children[0] = createNode("identifier", identifier_value, 0);
         (yyval.node)->children[1] = (yyvsp[(5) - (8)].node);
         (yyval.node)->children[2] = (yyvsp[(7) - (8)].node);
@@ -1574,7 +1575,7 @@ yyreduce:
     break;
 
   case 12:
-#line 136 "gpp_interpreter.y"
+#line 139 "gpp_interpreter.y"
     {//function call. actually returns the value of the rightmost parameter
         (yyval.node) = createNode("expression_i(fcall)", (yyvsp[(3) - (4)].node)->value, 2);
         (yyval.node)->children[0] = createNode("identifier", identifier_value, 0);
@@ -1583,7 +1584,7 @@ yyreduce:
     break;
 
   case 13:
-#line 141 "gpp_interpreter.y"
+#line 144 "gpp_interpreter.y"
     {//if statement. returns the value of the boolean expression
         (yyval.node) = createNode("expression_i(if)", (yyvsp[(3) - (5)].node)->value, 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1592,7 +1593,7 @@ yyreduce:
     break;
 
   case 14:
-#line 146 "gpp_interpreter.y"
+#line 149 "gpp_interpreter.y"
     {//if-else statement
         (yyval.node) = createNode("expression_i(if_else)", (yyvsp[(3) - (6)].node)->value, 3);
         (yyval.node)->children[0] = (yyvsp[(3) - (6)].node);
@@ -1602,7 +1603,7 @@ yyreduce:
     break;
 
   case 15:
-#line 152 "gpp_interpreter.y"
+#line 155 "gpp_interpreter.y"
     {//while loop
         (yyval.node) = createNode("expression_i(while)", (yyvsp[(3) - (5)].node)->value, 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1611,7 +1612,7 @@ yyreduce:
     break;
 
   case 16:
-#line 157 "gpp_interpreter.y"
+#line 160 "gpp_interpreter.y"
     {//for loop, returns the value of the last expression
         (yyval.node) = createNode("expression_i(for)", (yyvsp[(8) - (9)].node)->value, 4);
         (yyval.node)->children[0] = createNode("identifier", identifier_value, 0);
@@ -1622,7 +1623,7 @@ yyreduce:
     break;
 
   case 17:
-#line 164 "gpp_interpreter.y"
+#line 167 "gpp_interpreter.y"
     {//variable declaration. returns the value of the expression_i, which is the value of the variable
         (yyval.node) = createNode("expression_i(defvar)", (yyvsp[(4) - (5)].node)->value, 2);
         (yyval.node)->children[0] = createNode("identifier", identifier_value, 0);
@@ -1631,7 +1632,7 @@ yyreduce:
     break;
 
   case 18:
-#line 173 "gpp_interpreter.y"
+#line 176 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression_list", (yyvsp[(2) - (2)].node)->value, 2);
         (yyval.node)->children[0] = (yyvsp[(1) - (2)].node);
@@ -1640,7 +1641,7 @@ yyreduce:
     break;
 
   case 19:
-#line 178 "gpp_interpreter.y"
+#line 181 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression_list", (yyvsp[(1) - (1)].node)->value, 1);
         (yyval.node)->children[0] = (yyvsp[(1) - (1)].node);
@@ -1648,7 +1649,7 @@ yyreduce:
     break;
 
   case 20:
-#line 186 "gpp_interpreter.y"
+#line 189 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression_boolean(and)", ((yyvsp[(3) - (5)].node)->value) && ((yyvsp[(4) - (5)].node)->value), 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1657,7 +1658,7 @@ yyreduce:
     break;
 
   case 21:
-#line 191 "gpp_interpreter.y"
+#line 194 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression_boolean(or)", ((yyvsp[(3) - (5)].node)->value) || ((yyvsp[(4) - (5)].node)->value), 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1666,7 +1667,7 @@ yyreduce:
     break;
 
   case 22:
-#line 196 "gpp_interpreter.y"
+#line 199 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression_boolean(not)", !((yyvsp[(3) - (4)].node)->value), 1);
         (yyval.node)->children[0] = (yyvsp[(3) - (4)].node);
@@ -1674,7 +1675,7 @@ yyreduce:
     break;
 
   case 23:
-#line 200 "gpp_interpreter.y"
+#line 203 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression_boolean(equal)", ((yyvsp[(3) - (5)].node)->value) == ((yyvsp[(4) - (5)].node)->value), 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1683,7 +1684,7 @@ yyreduce:
     break;
 
   case 24:
-#line 205 "gpp_interpreter.y"
+#line 208 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("expression_boolean(less)", ((yyvsp[(3) - (5)].node)->value) < ((yyvsp[(4) - (5)].node)->value), 2);
         (yyval.node)->children[0] = (yyvsp[(3) - (5)].node);
@@ -1692,7 +1693,7 @@ yyreduce:
     break;
 
   case 25:
-#line 214 "gpp_interpreter.y"
+#line 217 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("identifier_list", identifier_value, 2);
         (yyval.node)->children[0] = (yyvsp[(1) - (2)].node);
@@ -1701,7 +1702,7 @@ yyreduce:
     break;
 
   case 26:
-#line 219 "gpp_interpreter.y"
+#line 222 "gpp_interpreter.y"
     {
         (yyval.node) = createNode("identifier_list", identifier_value, 1);
         (yyval.node)->children[0] = createNode("identifier", identifier_value, 0);
@@ -1710,7 +1711,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 1714 "gpp_interpreter.tab.c"
+#line 1715 "gpp_interpreter.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1924,7 +1925,7 @@ yyreturn:
 }
 
 
-#line 251 "gpp_interpreter.y"
+#line 254 "gpp_interpreter.y"
 
 
 int main() {
