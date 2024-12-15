@@ -1,4 +1,114 @@
+;; the most boring homework ever
+;; baris eren gezici
 
+;; tokenizer part is the same as the previous homework
+(defparameter *gpp-keywords* '("and" "or" "not" "equal" "less" "nil" "list"
+                               "append" "concat" "set" "deffun" "for" "if"
+                               "exit" "load" "print" "true" "false"))
+
+(defparameter *gpp-operators* '("+" "-" "*" "/" "(" ")" ","))
+
+(defun classify-token (token)
+    (let ((token-str (string token))) ;; Convert token to string for comparison
+        (cond
+            ;; Check if the token is a keyword
+            (   
+                (member token-str *gpp-keywords* :test #'string=)
+                (intern (format nil "KW_~A" (string-upcase token-str)))
+            )
+        
+            ;; Check if the token is an operator
+            ((string= token-str "+") 'OP_PLUS)
+            ((string= token-str "-") 'OP_MINUS)
+            ((string= token-str "*") 'OP_MULT)
+            ((string= token-str "/") 'OP_DIV)
+            ((string= token-str "(") 'OP_OP)
+            ((string= token-str ")") 'OP_CP)
+            ((string= token-str ",") 'OP_COMMA)
+
+            ;; Check for fractions (e.g., 123:45)
+            (
+                (and (find #\: token-str)
+                    (
+                        let* (
+                            (colon-pos (position #\: token-str))
+                            (num1 (subseq token-str 0 colon-pos))
+                            (num2 (subseq token-str (1+ colon-pos)))
+                        )
+                        (and 
+                            (not (string= num1 "")) ;; Ensure num1 is not empty
+                            (not (string= num2 "")) ;; Ensure num2 is not empty
+                            (every #'digit-char-p num1)
+                            (every #'digit-char-p num2)
+                        )
+                    )
+                )
+                'VALUEF
+            )
+            
+            ;; Check for integers (e.g., 123)
+            ((every #'digit-char-p token-str) 'VALUEI)
+            
+            ;; Check for valid identifiers (e.g., my_var123)
+            (
+                (and (alpha-char-p (aref token-str 0))
+                    (every (lambda (c) (or (alpha-char-p c) (digit-char-p c) (char= c #\_))) token-str)
+                )
+                'IDENTIFIER
+            )
+            
+            ;; Otherwise, it's a syntax error
+            (t 'SYNTAX_ERROR)
+        )
+    )
+)
+(defun tokenize (line)
+    (
+        let ((tokens '()) (current-token ""))
+
+        (if (and (>= (length line) 2) (string= (subseq line 0 2) ";;"))
+            (push 'COMMENT tokens)
+
+            ;;if not comment, process the line for tokens
+            (loop for char across line do
+                (cond
+                    ;; Ignore whitespace
+                    (
+                        (member char '(#\Space #\Tab #\Newline #\Return))
+                        (
+                            when (not (string= current-token ""))
+                            (push (classify-token current-token) tokens)
+                            (setf current-token "")
+                        )
+                    )
+
+                    ;; operators
+                    (
+                        (member (string char) *gpp-operators* :test #'string=)
+                        (when (not (string= current-token ""))
+                            (push (classify-token current-token) tokens)
+                            (setf current-token "")
+                        )
+                        (push (classify-token (string char)) tokens)
+                    )
+
+                    ;; if the string is now a token yet, we collect them
+                    ;; Collect characters for tokens
+                    (t (setf current-token (concatenate 'string current-token (string char))))
+                )
+            )
+        )
+        ;; Push the last token if any
+        ;; for example, if the line ends with a identifier "baris" we need to push it
+        ;;because (t (setf current-token (concatenate 'string current-token (string char)))) part didnt push it
+        (when (not (string= current-token ""))
+            (push (classify-token current-token) tokens)
+        )
+        (reverse tokens)
+    )
+)
+
+;; parser part : the new implemented part for this homework
 
 ;; expression -> OP_OP OP_PLUS expression expression OP_CP
 (defun reduce-expression-op-plus (stack)
@@ -146,7 +256,7 @@
       (progn
         (print "expression(if-else)")
         (setf stack (nthcdr 6 stack)) 
-        (push 'expression stack)
+        (push 'expression stack))
       stack))
 
 ;;expression -> OP_OP KW_WHILE expression_boolean expression_list OP_CP
@@ -395,17 +505,37 @@
 
 ;; (load "last.lisp")
 
-(let 
-    (
-        (input '(OP_OP KW_WHILE expression_boolean expression_list OP_CP))
-        (result-stack nil)
-    )
-    (setq result-stack (parser input))
+; (let 
+;     (
+;         (input "(+ 1:2 2:3)")
+;         (result-stack nil)
+;     )
+;     (setq result-stack (parser (tokenize input)))
+;     (print result-stack)
+    
+;     (if (equal result-stack '(start))
+;         (print "Parser success")
+;         (print "Parser failed")
+;     )
+; )
+
+(defun gppinterpreter ()
+  "Takes a line from the user, tokenizes it, parses it, and checks if the result stack is equal to 'start."
+    (format t "Enter your input: ")
+    (force-output)
+    (let 
+        (
+            (line (read-line))
+            (result-stack nil)
+        )
+    (setq result-stack (parser (tokenize line)))
     (print result-stack)
     
     (if (equal result-stack '(start))
         (print "Parser success")
         (print "Parser failed")
     )
+    )
 )
 
+(gppinterpreter)
