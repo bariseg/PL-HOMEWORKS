@@ -133,9 +133,8 @@ expression:
         $$->children[0] = createNode("identifier", identifier_value, 0);
         $$->children[1] = $5;
         $$->children[2] = $7;
-    } 
-    // i think it is impossible to implement the function call returning the last expression value
-    | OP_OP IDENTIFIER expression_list OP_CP {//function call. actually returns the value of the rightmost parameter
+    }
+    | OP_OP IDENTIFIER expression_list OP_CP {//function call
         $$ = createNode("expression_i(fcall)", $3->value, 2);
         $$->children[0] = createNode("identifier", identifier_value, 0);
         $$->children[1] = $3;

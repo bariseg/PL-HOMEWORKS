@@ -1,7 +1,7 @@
 ;; the most boring homework ever
 ;; baris eren gezici
 
-;; tokenizer part is the modified version of the previous homework
+;; tokenizer part is the same as the previous homework
 (defparameter *gpp-keywords* '("and" "or" "not" "equal" "less" "nil" "list"
                                "append" "concat" "set" "deffun" "for" "if"
                                "exit" "load" "print" "true" "false"))
@@ -11,22 +11,22 @@
 (defun classify-token (token)
     (let ((token-str (string token))) ;; Convert token to string for comparison
         (cond
-            ;; keyword
+            ;; Check if the token is a keyword
             (   
                 (member token-str *gpp-keywords* :test #'string=)
                 (intern (format nil "KW_~A" (string-upcase token-str)))
             )
         
-            ;; operator
+            ;; Check if the token is an operator
             ((string= token-str "+") (list 'OP_PLUS 0))
-            ((string= token-str "-") (list 'OP_MINUS 0))
-            ((string= token-str "*") (list 'OP_MULT 0))
-            ((string= token-str "/") (list 'OP_DIV 0))
+            ((string= token-str "-") 'OP_MINUS)
+            ((string= token-str "*") 'OP_MULT)
+            ((string= token-str "/") 'OP_DIV)
             ((string= token-str "(") (list 'OP_OP 0))
             ((string= token-str ")") (list 'OP_CP 0))
-            ((string= token-str ",") (list 'OP_COMMA 0))
+            ((string= token-str ",") 'OP_COMMA)
 
-            ;;fractions 123:45
+            ;; Check for fractions (e.g., 123:45)
             (
                 (and 
                     (find #\: token-str)
@@ -37,8 +37,8 @@
                             (num2 (subseq token-str (1+ colon-pos)))
                         )
                         (and 
-                            (not (string= num1 "")) 
-                            (not (string= num2 "")) 
+                            (not (string= num1 "")) ;; Ensure num1 is not empty
+                            (not (string= num2 "")) ;; Ensure num2 is not empty
                             (every #'digit-char-p num1)
                             (every #'digit-char-p num2)
                         )
@@ -47,16 +47,19 @@
                 (list 'VALUEF (/ (parse-integer (subseq token-str 0 (position #\: token-str))) (parse-integer (subseq token-str (1+ (position #\: token-str))))))
             )
             
-            ;; identifiers
+            ;; Check for integers (e.g., 123)
+            ((every #'digit-char-p token-str) 'VALUEI)
+            
+            ;; Check for valid identifiers (e.g., my_var123)
             (
                 (and (alpha-char-p (aref token-str 0))
                     (every (lambda (c) (or (alpha-char-p c) (digit-char-p c) (char= c #\_))) token-str)
                 )
-                (list 'IDENTIFIER 0)
+                (list 'IDENTIFIER token-str)
             )
             
             ;; Otherwise, it's a syntax error
-            (t (list 'SYNTAX_ERROR 0))
+            (t 'SYNTAX_ERROR)
         )
     )
 )
@@ -136,78 +139,45 @@
 
 ;; expression -> OP_OP OP_MINUS expression expression OP_CP
 (defun reduce-expression-op-minus (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'OP_MINUS)
-            (eql (first (nth 2 stack)) 'expression)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let*
-            (
-                (expr1 (second (nth 2 stack)))
-                (expr2 (second (nth 1 stack)))
-                (result (- expr1 expr2))
-            )
-            (print (format nil "expression(minus) : ~a" result))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression result) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'OP_MINUS)
+           (eql (nth 2 stack) 'expression)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(minus)")
+        (setf stack (nthcdr 5 stack))  
+        (push 'expression stack))      
+      stack))
 
 ;; expression -> OP_OP OP_MULT expression expression OP_CP
 (defun reduce-expression-op-mult (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'OP_MULT)
-            (eql (first (nth 2 stack)) 'expression)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let*
-            (
-                (expr1 (second (nth 2 stack)))
-                (expr2 (second (nth 1 stack)))
-                (result (* expr1 expr2))
-            )
-            (print (format nil "expression(mult) : ~a" result))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression result) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'OP_MULT)
+           (eql (nth 2 stack) 'expression)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(mult)")
+        (setf stack (nthcdr 5 stack))
+        (push 'expression stack))
+      stack))
 
 ;; expression -> OP_OP OP_DIV expression expression OP_CP
 (defun reduce-expression-op-div (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'OP_DIV)
-            (eql (first (nth 2 stack)) 'expression)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let*
-            (
-                (expr1 (second (nth 2 stack)))
-                (expr2 (second (nth 1 stack)))
-                (result (/ expr1 expr2))
-            )
-            (print (format nil "expression(div) : ~a" result))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression result) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'OP_DIV)
+           (eql (nth 2 stack) 'expression)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(div)")
+        (setf stack (nthcdr 5 stack))  
+        (push 'expression stack))      
+      stack))
 
 ;;expression -> OP_OP KW_SET IDENTIFIER expression OP_CP
 (defun reduce-expression-op-set (stack)
@@ -221,28 +191,17 @@
         (print "expression(set)")
         (setf stack (nthcdr 5 stack))  
         (push 'expression stack))
-      stack)
-)
-
+      stack))
 
 ;; expression -> IDENTIFIER
 (defun reduce-expression-identifier (stack)
-    (if (and 
-            (>= (length stack) 1)
-            (eql (first (nth 0 stack)) 'IDENTIFIER)
-        )
-    (progn
-        (let
-            (
-                (identifier (second (nth 0 stack)))
-            )
-            (print (format nil "expression(identifier) : ~a" identifier))
-            (setf stack (nthcdr 1 stack))
-            (push (list 'expression identifier) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 1)
+           (eql (nth 0 stack) 'IDENTIFIER))
+      (progn
+        (print "expression(identifier)")
+        (setf stack (nthcdr 1 stack)) 
+        (push 'expression stack)) 
+      stack))
 
 ;; expression -> VALUEF
 (defun reduce-expression-valuef (stack)
@@ -266,191 +225,119 @@
 
 ;;expression -> OP_OP KW_DEFFUN IDENTIFIER OP_OP identifier_list OP_CP expression_list OP_CP
 (defun reduce-expression-deffun (stack)
-    (if (and 
-            (>= (length stack) 8)
-            (eql (first (nth 7 stack)) 'OP_OP)
-            (eql (first (nth 6 stack)) 'KW_DEFFUN)
-            (eql (first (nth 5 stack)) 'IDENTIFIER)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'identifier_list)
-            (eql (first (nth 2 stack)) 'OP_CP)
-            (eql (first (nth 1 stack)) 'expression_list)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let
-            (
-                (value (second (nth 1 stack)))
-            )
-            (print (format nil "expression(deffun) : ~a " value))
-            (setf stack (nthcdr 8 stack))
-            (push (list 'expression value) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 8)
+           (eql (nth 7 stack) 'OP_OP)
+           (eql (nth 6 stack) 'KW_DEFFUN)
+           (eql (nth 5 stack) 'IDENTIFIER)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'identifier_list)
+           (eql (nth 2 stack) 'OP_CP)
+           (eql (nth 1 stack) 'expression_list)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(deffun)")
+        (setf stack (nthcdr 8 stack))  
+        (push 'expression stack))   
+      stack))
 
 ;; expression -> OP_OP IDENTIFIER expression_list OP_CP
 (defun reduce-expression-identifier-list (stack)
-    (if (and 
-            (>= (length stack) 4)
-            (eql (first (nth 3 stack)) 'OP_OP)
-            (eql (first (nth 2 stack)) 'identifier_list)
-            (eql (first (nth 1 stack)) 'IDENTIFIER)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let
-            (
-                (value (second (nth 1 stack)))
-            )
-            (print (format nil "expression(identifier-list) : ~a" value))
-            (setf stack (nthcdr 4 stack))
-            (push (list 'expression value ) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 4)
+           (eql (nth 3 stack) 'OP_OP)
+           (eql (nth 2 stack) 'IDENTIFIER)
+           (eql (nth 1 stack) 'expression_list)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(identifier-list)")
+        (setf stack (nthcdr 4 stack)) 
+        (push 'expression stack))
+      stack))
 
 ;;expression -> OP_OP KW_IF expression_boolean expression_list OP_CP
 (defun reduce-expression-if (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'KW_IF)
-            (eql (first (nth 2 stack)) 'expression_boolean)
-            (eql (first (nth 1 stack)) 'expression_list)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let
-            (
-                (value (second (nth 2 stack)))
-            )
-            (print (format nil "expression(if) : ~a" value))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression value) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'KW_IF)
+           (eql (nth 2 stack) 'expression_boolean)
+           (eql (nth 1 stack) 'expression_list)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(if)")
+        (setf stack (nthcdr 5 stack)) 
+        (push 'expression stack))  
+      stack))
 
 ;;expression -> OP_OP KW_IF expression_boolean expression_list expression_list OP_CP
 (defun reduce-expression-if-else (stack)
-    (if (and 
-            (>= (length stack) 6)
-            (eql (first (nth 5 stack)) 'OP_OP)
-            (eql (first (nth 4 stack)) 'KW_IF)
-            (eql (first (nth 3 stack)) 'expression_boolean)
-            (eql (first (nth 2 stack)) 'expression_list)
-            (eql (first (nth 1 stack)) 'expression_list)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let
-            (
-                (value (second (nth 3 stack)))
-            )
-            (print (format nil "expression(if-else) : ~a" value))
-            (setf stack (nthcdr 6 stack))
-            (push (list 'expression value) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 6)
+           (eql (nth 5 stack) 'OP_OP)
+           (eql (nth 4 stack) 'KW_IF)
+           (eql (nth 3 stack) 'expression_boolean)
+           (eql (nth 2 stack) 'expression_list)
+           (eql (nth 1 stack) 'expression_list)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(if-else)")
+        (setf stack (nthcdr 6 stack)) 
+        (push 'expression stack))
+      stack))
 
 ;;expression -> OP_OP KW_WHILE expression_boolean expression_list OP_CP
 (defun reduce-expression-while (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'KW_WHILE)
-            (eql (first (nth 2 stack)) 'expression_boolean)
-            (eql (first (nth 1 stack)) 'expression_list)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let
-            (
-                (value (second (nth 2 stack)))
-            )
-            (print (format nil "expression(while) : ~a" value))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression value) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'KW_WHILE)
+           (eql (nth 2 stack) 'expression_boolean)
+           (eql (nth 1 stack) 'expression_list)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(while)")
+        (setf stack (nthcdr 5 stack))
+        (push 'expression stack))
+      stack))
 
 ;; expression -> OP_OP KW_FOR OP_OP IDENTIFIER expression expression OP_CP expression_list OP_CP
 (defun reduce-expression-for (stack)
-    (if (and 
-            (>= (length stack) 9)
-            (eql (first (nth 8 stack)) 'OP_OP)
-            (eql (first (nth 7 stack)) 'KW_FOR)
-            (eql (first (nth 6 stack)) 'OP_OP)
-            (eql (first (nth 5 stack)) 'IDENTIFIER)
-            (eql (first (nth 4 stack)) 'expression)
-            (eql (first (nth 3 stack)) 'expression)
-            (eql (first (nth 2 stack)) 'OP_CP)
-            (eql (first (nth 1 stack)) 'expression_list)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let
-            (
-                (value (second (nth 1 stack)))
-            )
-            (print (format nil "expression(for) : ~a " value))
-            (setf stack (nthcdr 9 stack))
-            (push (list 'expression value) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 9)
+           (eql (nth 8 stack) 'OP_OP)
+           (eql (nth 7 stack) 'KW_FOR)
+           (eql (nth 6 stack) 'OP_OP)
+           (eql (nth 5 stack) 'IDENTIFIER)
+           (eql (nth 4 stack) 'expression)
+           (eql (nth 3 stack) 'expression)
+           (eql (nth 2 stack) 'OP_CP)
+           (eql (nth 1 stack) 'expression_list)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(for)")
+        (setf stack (nthcdr 9 stack))
+        (push 'expression stack))
+      stack))
 
 ;;expression -> OP_OP KW_DEFVAR IDENTIFIER expression OP_CP
 (defun reduce-expression-defvar (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'KW_DEFVAR)
-            (eql (first (nth 2 stack)) 'IDENTIFIER)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let
-            (
-                (value (second (nth 1 stack)))
-            )
-            (print (format nil "expression(defvar) : ~a" value))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression value) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'KW_DEFVAR)
+           (eql (nth 2 stack) 'IDENTIFIER)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression(defvar)")
+        (setf stack (nthcdr 5 stack))
+        (push 'expression stack))
+      stack))
 
 ;; expression_list -> expression_list expression
 (defun reduce-expression-list (stack)
-    (if (and 
-            (>= (length stack) 2)
-            (eql (first (nth 1 stack)) 'expression_list)
-            (eql (first (nth 0 stack)) 'expression)
-        )
-    (progn
-        (let
-            (
-                (value (second (nth 0 stack)))
-            )
-            (print (format nil "expression_list : ~a"  value))
-            (setf stack (nthcdr 2 stack))
-            (push (list 'expression_list value) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 2)
+           (eql (nth 1 stack) 'expression_list)
+           (eql (nth 0 stack) 'expression))
+      (progn
+        (print "expression_list")
+        (setf stack (nthcdr 2 stack))
+        (push 'expression_list stack))
+      stack))
 
 ;; expression_list -> expression
 (defun reduce-expression-list-single (stack)
@@ -460,9 +347,7 @@
         )
         (progn
             (let 
-                (
-                    (value (second (nth 0 stack)))
-                )
+                ((value (second (nth 0 stack))))
                 (print (format nil "expression_list(single) : ~a" value))
                 (setf stack (nthcdr 1 stack))
                 (push (list 'expression_list value) stack)
@@ -474,125 +359,72 @@
 
 ;; expression_boolean -> OP_OP KW_AND expression expression OP_CP
 (defun reduce-expression-boolean-and (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'KW_AND)
-            (eql (first (nth 2 stack)) 'expression)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let*
-            (
-                (expr1 (second (nth 2 stack)))
-                (expr2 (second (nth 1 stack)))
-                (result (and expr1 expr2))
-            )
-            (print (format nil "expression_boolean(and) : ~a" result))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression_boolean result) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'KW_AND)
+           (eql (nth 2 stack) 'expression)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression_boolean(and)")
+        (setf stack (nthcdr 5 stack))
+        (push 'expression_boolean stack))
+      stack))
 
 ;; expression_boolean -> OP_OP KW_OR expression expression OP_CP
 (defun reduce-expression-boolean-or (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'KW_OR)
-            (eql (first (nth 2 stack)) 'expression)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let*
-            (
-                (expr1 (second (nth 2 stack)))
-                (expr2 (second (nth 1 stack)))
-                (result (or expr1 expr2))
-            )
-            (print (format nil "expression_boolean(or) : ~a" result))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression_boolean result) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'KW_OR)
+           (eql (nth 2 stack) 'expression)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression_boolean(or)")
+        (setf stack (nthcdr 5 stack))
+        (push 'expression_boolean stack))
+      stack))
 
 ;;expression_boolean -> OP_OP KW_NOT expression OP_CP
 (defun reduce-expression-boolean-not (stack)
-    (if (and 
-            (>= (length stack) 4)
-            (eql (first (nth 3 stack)) 'OP_OP)
-            (eql (first (nth 2 stack)) 'KW_NOT)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let*
-            (
-                (expr (second (nth 1 stack)))
-                (result (not expr))
-            )
-            (print (format nil "expression_boolean(not) : ~a" result))
-            (setf stack (nthcdr 4 stack))
-            (push (list 'expression_boolean result) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 4)
+           (eql (nth 3 stack) 'OP_OP)
+           (eql (nth 2 stack) 'KW_NOT)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression_boolean(not)")
+        (setf stack (nthcdr 4 stack)) 
+        (push 'expression_boolean stack))
+      stack))
 
 ;; expression_boolean -> OP_OP KW_EQUAL expression expression OP_CP
 (defun reduce-expression-boolean-equal (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'KW_EQUAL)
-            (eql (first (nth 2 stack)) 'expression)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let*
-            (
-                (expr1 (second (nth 2 stack)))
-                (expr2 (second (nth 1 stack)))
-                (result (equal expr1 expr2))
-            )
-            (print (format nil "expression_boolean(equal) : ~a" result))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression_boolean result) stack)
-        )
-    )
-    stack)
-)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'KW_EQUAL)
+           (eql (nth 2 stack) 'expression)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression_boolean(equal)")
+        (setf stack (nthcdr 5 stack)) 
+        (push 'expression_boolean stack))
+      stack))
 
 ;;expression_boolean -> OP_OP KW_LESS expression expression OP_CP
 (defun reduce-expression-boolean-less (stack)
-    (if (and 
-            (>= (length stack) 5)
-            (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'KW_LESS)
-            (eql (first (nth 2 stack)) 'expression)
-            (eql (first (nth 1 stack)) 'expression)
-            (eql (first (nth 0 stack)) 'OP_CP)
-        )
-    (progn
-        (let*
-            (
-                (expr1 (second (nth 2 stack)))
-                (expr2 (second (nth 1 stack)))
-                (result (< expr1 expr2))
-            )
-            (print (format nil "expression_boolean(less) : ~a" result))
-            (setf stack (nthcdr 5 stack))
-            (push (list 'expression_boolean result) stack)
-        )
-    )
-    stack)
+  (if (and (>= (length stack) 5)
+           (eql (nth 4 stack) 'OP_OP)
+           (eql (nth 3 stack) 'KW_LESS)
+           (eql (nth 2 stack) 'expression)
+           (eql (nth 1 stack) 'expression)
+           (eql (nth 0 stack) 'OP_CP))
+      (progn
+        (print "expression_boolean(less)")
+        (setf stack (nthcdr 5 stack))
+        (push 'expression_boolean stack))
+      stack)
 )
 
 
