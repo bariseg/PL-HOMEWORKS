@@ -2,8 +2,8 @@
 ;; baris eren gezici
 
 ;; tokenizer part is the modified version of the previous homework
-(defparameter *gpp-keywords* '("and" "or" "not" "equal" "less" "nil" "list"
-                               "append" "concat" "set" "deffun" "for" "if"
+(defparameter *gpp-keywords* '("and" "or" "not" "equal" "less" "nil" "list" "while"
+                               "append" "concat" "set" "deffun" "defvar" "for" "if"
                                "exit" "load" "print" "true" "false"))
 
 (defparameter *gpp-operators* '("+" "-" "*" "/" "(" ")" ","))
@@ -14,7 +14,7 @@
             ;; keyword
             (   
                 (member token-str *gpp-keywords* :test #'string=)
-                (intern (format nil "KW_~A" (string-upcase token-str)))
+                (list (intern (format nil "KW_~A" (string-upcase token-str))) 0)
             )
         
             ;; operator
@@ -52,7 +52,7 @@
                 (and (alpha-char-p (aref token-str 0))
                     (every (lambda (c) (or (alpha-char-p c) (digit-char-p c) (char= c #\_))) token-str)
                 )
-                (list 'IDENTIFIER 0)
+                (list 'IDENTIFIER token-str)
             )
             
             ;; Otherwise, it's a syntax error
@@ -107,7 +107,6 @@
     )
 )
 
-;; parser part : the new implemented part for this homework
 
 ;; expression -> OP_OP OP_PLUS expression expression OP_CP
 (defun reduce-expression-op-plus (stack)
@@ -208,20 +207,28 @@
     )
     stack)
 )
-
-;;expression -> OP_OP KW_SET IDENTIFIER expression OP_CP
+                            ;; identifier
+;;expression -> OP_OP KW_SET expression expression OP_CP
 (defun reduce-expression-op-set (stack)
-  (if (and (>= (length stack) 5)
-           (eql (nth 4 stack) 'OP_OP)
-           (eql (nth 3 stack) 'KW_SET)
-           (eql (nth 2 stack) 'IDENTIFIER)
-           (eql (nth 1 stack) 'expression)
-           (eql (nth 0 stack) 'OP_CP))
-      (progn
-        (print "expression(set)")
-        (setf stack (nthcdr 5 stack))  
-        (push 'expression stack))
-      stack)
+    (if (and 
+            (>= (length stack) 5)
+            (eql (nth 4 stack) 'OP_OP)
+            (eql (nth 3 stack) 'KW_SET)
+            (eql (nth 2 stack) 'expression)
+            (eql (nth 1 stack) 'expression)
+            (eql (nth 0 stack) 'OP_CP))
+        (progn
+            (let* 
+                (
+                    (value (second (nth 1 stack)))
+                )
+                (print (format nil "expression(set) : ~a" value))
+                (setf stack (nthcdr 5 stack))
+                (push (list 'expression value) stack)
+            )
+        )
+    stack
+    )
 )
 
 
@@ -238,7 +245,7 @@
             )
             (print (format nil "expression(identifier) : ~a" identifier))
             (setf stack (nthcdr 1 stack))
-            (push (list 'expression identifier) stack)
+            (push (list 'expression 0) stack)
         )
     )
     stack)
@@ -263,18 +270,18 @@
     ) 
     stack)
 )
-
-;;expression -> OP_OP KW_DEFFUN IDENTIFIER OP_OP identifier_list OP_CP expression_list OP_CP
+;; (gppinterpreter "input.txt") identifier   ;; identifier_list  expression_list
+;;expression -> OP_OP KW_DEFFUN expression OP_OP expression OP_CP expression OP_CP
 (defun reduce-expression-deffun (stack)
     (if (and 
             (>= (length stack) 8)
             (eql (first (nth 7 stack)) 'OP_OP)
             (eql (first (nth 6 stack)) 'KW_DEFFUN)
-            (eql (first (nth 5 stack)) 'IDENTIFIER)
+            (eql (first (nth 5 stack)) 'expression)
             (eql (first (nth 4 stack)) 'OP_OP)
-            (eql (first (nth 3 stack)) 'identifier_list)
+            (eql (first (nth 3 stack)) 'expression)
             (eql (first (nth 2 stack)) 'OP_CP)
-            (eql (first (nth 1 stack)) 'expression_list)
+            (eql (first (nth 1 stack)) 'expression)
             (eql (first (nth 0 stack)) 'OP_CP)
         )
     (progn
@@ -290,7 +297,7 @@
     stack)
 )
 
-;; expression -> OP_OP IDENTIFIER expression_list OP_CP
+;; expression -> OP_OP identifier_list IDENTIFIER OP_CP
 (defun reduce-expression-identifier-list (stack)
     (if (and 
             (>= (length stack) 4)
@@ -311,15 +318,17 @@
     )
     stack)
 )
-
-;;expression -> OP_OP KW_IF expression_boolean expression_list OP_CP
+;; (load "gpp_interpreter.lisp")
+;; (gppinterpreter "input.txt")
+                                            ;; expression_list
+;;expression -> OP_OP KW_IF expression_boolean expression OP_CP
 (defun reduce-expression-if (stack)
     (if (and 
             (>= (length stack) 5)
             (eql (first (nth 4 stack)) 'OP_OP)
             (eql (first (nth 3 stack)) 'KW_IF)
             (eql (first (nth 2 stack)) 'expression_boolean)
-            (eql (first (nth 1 stack)) 'expression_list)
+            (eql (first (nth 1 stack)) 'expression)
             (eql (first (nth 0 stack)) 'OP_CP)
         )
     (progn
@@ -334,16 +343,16 @@
     )
     stack)
 )
-
-;;expression -> OP_OP KW_IF expression_boolean expression_list expression_list OP_CP
+                                            ;; expression_list expression_list
+;;expression -> OP_OP KW_IF expression_boolean expression expression OP_CP
 (defun reduce-expression-if-else (stack)
     (if (and 
             (>= (length stack) 6)
             (eql (first (nth 5 stack)) 'OP_OP)
             (eql (first (nth 4 stack)) 'KW_IF)
             (eql (first (nth 3 stack)) 'expression_boolean)
-            (eql (first (nth 2 stack)) 'expression_list)
-            (eql (first (nth 1 stack)) 'expression_list)
+            (eql (first (nth 2 stack)) 'expression)
+            (eql (first (nth 1 stack)) 'expression)
             (eql (first (nth 0 stack)) 'OP_CP)
         )
     (progn
@@ -358,15 +367,17 @@
     )
     stack)
 )
-
-;;expression -> OP_OP KW_WHILE expression_boolean expression_list OP_CP
+;; (load "gpp_interpreter.lisp")
+;;(gppinterpreter "input.txt")
+                                            ;; expression_list
+;;expression -> OP_OP KW_WHILE expression_boolean expression OP_CP
 (defun reduce-expression-while (stack)
     (if (and 
             (>= (length stack) 5)
             (eql (first (nth 4 stack)) 'OP_OP)
             (eql (first (nth 3 stack)) 'KW_WHILE)
             (eql (first (nth 2 stack)) 'expression_boolean)
-            (eql (first (nth 1 stack)) 'expression_list)
+            (eql (first (nth 1 stack)) 'expression)
             (eql (first (nth 0 stack)) 'OP_CP)
         )
     (progn
@@ -381,19 +392,19 @@
     )
     stack)
 )
-
-;; expression -> OP_OP KW_FOR OP_OP IDENTIFIER expression expression OP_CP expression_list OP_CP
+                                ;; yacc fileda IDENTIFIER                   expression_list
+;; expression -> OP_OP KW_FOR OP_OP expression expression expression OP_CP expression OP_CP
 (defun reduce-expression-for (stack)
     (if (and 
             (>= (length stack) 9)
             (eql (first (nth 8 stack)) 'OP_OP)
             (eql (first (nth 7 stack)) 'KW_FOR)
             (eql (first (nth 6 stack)) 'OP_OP)
-            (eql (first (nth 5 stack)) 'IDENTIFIER)
+            (eql (first (nth 5 stack)) 'expression)
             (eql (first (nth 4 stack)) 'expression)
             (eql (first (nth 3 stack)) 'expression)
             (eql (first (nth 2 stack)) 'OP_CP)
-            (eql (first (nth 1 stack)) 'expression_list)
+            (eql (first (nth 1 stack)) 'expression)
             (eql (first (nth 0 stack)) 'OP_CP)
         )
     (progn
@@ -408,14 +419,14 @@
     )
     stack)
 )
-
-;;expression -> OP_OP KW_DEFVAR IDENTIFIER expression OP_CP
+                            ;; yacc fileda IDENTIFIER
+;;expression -> OP_OP KW_DEFVAR expression expression OP_CP
 (defun reduce-expression-defvar (stack)
     (if (and 
             (>= (length stack) 5)
             (eql (first (nth 4 stack)) 'OP_OP)
             (eql (first (nth 3 stack)) 'KW_DEFVAR)
-            (eql (first (nth 2 stack)) 'IDENTIFIER)
+            (eql (first (nth 2 stack)) 'expression)
             (eql (first (nth 1 stack)) 'expression)
             (eql (first (nth 0 stack)) 'OP_CP)
         )

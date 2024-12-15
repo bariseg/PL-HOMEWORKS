@@ -171,7 +171,7 @@ expression:
 ;
 
 expression_list:
-     expression_list expression {
+    expression_list expression {
         $$ = createNode("expression_list", $2->value, 2);
         $$->children[0] = $1;
         $$->children[1] = $2;
