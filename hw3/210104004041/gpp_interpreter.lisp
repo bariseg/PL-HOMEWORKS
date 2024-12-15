@@ -110,106 +110,106 @@
     )
 )
 
+;; (load "gpp_interpreter.lisp")
 
-;;(load "gpp_lexer.lisp")
-;;(gppinterpreter)
-;;(gppinterpreter "test.txt")
 
-;; Parse Tree Functions
-(defun make-node (name &rest children)
-  "Create a parse tree node with a name and children."
-  (list name children))
+(defun make-node (name value &rest children)
+  "Create a parse tree node with a name, value, and children."
+  (list :name name :value value :children children))
 
-;; Shift-Reduce Parser
+(defun print-tree (node depth)
+  "Print the parse tree."
+  (when node
+    (dotimes (i depth) (format t "| "))
+    (format t "~A : ~A~%" (getf node :name) (getf node :value))
+    (dolist (child (getf node :children))
+      (print-tree child (1+ depth)))))
+
 (defun parse-shift-reduce (tokens)
-  
-  (let 
-    ((stack '())) ;; Parse stack
+  (let ((stack '()))
     (loop
       (cond
-        ;; Reduce: Match expressions like ( + exp exp )
-        (
-          (and 
-              (>= (length stack) 5)                   ;;   5      4     3   2    1
-              (equal (first (nthcdr 4 stack)) 'OP_OP) ;; OP_OP OP_PLUS exp exp OP_CP
-              (member (first (nthcdr 3 stack)) '(OP_PLUS OP_MINUS OP_MULT OP_DIV))
-              (equal (first stack) 'OP_CP)
-          )
-          
-          (let* 
-            (
-              (operator (first (nthcdr 3 stack)))
-              (left (first (nthcdr 2 stack)))
-              (right (first (nthcdr 1 stack)))
-            )
-            (setf stack (append (butlast stack 5) (list (make-node operator left right))))
-          )
-        )
+        ;; Reduce: expression -> OP_OP OP_PLUS expression expression OP_CP
+        ((and (>= (length stack) 5)
+              (equal (first (nthcdr 4 stack)) 'OP_OP)
+              (equal (first (nthcdr 3 stack)) 'OP_PLUS)
+              (equal (first stack) 'OP_CP))
+         (let ((left (second (nthcdr 2 stack)))
+               (right (second stack)))
+           (setf stack (append (butlast stack 5)
+                               (list (make-node "expression(plus)" (+ (getf left :value) (getf right :value)) left right))))))
 
-        ;; Reduce: Match set statements
-        (
-          (and                    
-            (>= (length stack) 5)                   ;; 5  4  3 2 1
-            (equal (first (nthcdr 4 stack)) 'OP_OP) ;; ( set x 4 )
-            (equal (first (nthcdr 3 stack)) 'KW_SET)
-            (equal (first stack) 'OP_CP)
-          )
-          
-          (let* 
-            (
-              (identifier (first (nthcdr 3 stack)))
-              (expression (second stack))
-            )
-            
-            (setf stack (append (butlast stack 5) (list (make-node 'set identifier expression))))
-          )
-        )
+        ;; Reduce: expression -> OP_OP OP_MINUS expression expression OP_CP
+        ((and (>= (length stack) 5)
+              (equal (first (nthcdr 4 stack)) 'OP_OP)
+              (equal (first (nthcdr 3 stack)) 'OP_MINUS)
+              (equal (first stack) 'OP_CP))
+         (let ((left (second (nthcdr 2 stack)))
+               (right (second stack)))
+           (setf stack (append (butlast stack 5)
+                               (list (make-node "expression(minus)" (- (getf left :value) (getf right :value)) left right))))))
 
-        ;; Reduce: Match if statements
-        (
-          (and 
-            (>= (length stack) 7)
-            (equal (first (nthcdr 6 stack)) 'OP_OP)
-            (equal (third (nthcdr 6 stack)) 'KW_IF)
-            (equal (first stack) 'OP_CP)
-          )
-          (let* 
-            (
-              (condition (second (nthcdr 4 stack)))
-              (true-branch (second (nthcdr 2 stack)))
-              (false-branch (if (= (length stack) 7) nil (second stack)))
-            )
-            (setf stack (append (butlast stack 7)  (list (make-node 'if condition true-branch false-branch))))
-          )
-        )
+        ;; Reduce: expression -> OP_OP OP_MULT expression expression OP_CP
+        ((and (>= (length stack) 5)
+              (equal (first (nthcdr 4 stack)) 'OP_OP)
+              (equal (first (nthcdr 3 stack)) 'OP_MULT)
+              (equal (first stack) 'OP_CP))
+         (let ((left (second (nthcdr 2 stack)))
+               (right (second stack)))
+           (setf stack (append (butlast stack 5)
+                               (list (make-node "expression(mult)" (* (getf left :value) (getf right :value)) left right))))))
+
+        ;; Reduce: expression -> OP_OP OP_DIV expression expression OP_CP
+        ((and (>= (length stack) 5)
+              (equal (first (nthcdr 4 stack)) 'OP_OP)
+              (equal (first (nthcdr 3 stack)) 'OP_DIV)
+              (equal (first stack) 'OP_CP))
+         (let ((left (second (nthcdr 2 stack)))
+               (right (second stack)))
+           (setf stack (append (butlast stack 5)
+                               (list (make-node "expression(div)" (/ (getf left :value) (getf right :value)) left right))))))
+
+        ;; Reduce: expression_list -> expression
+        ((and (>= (length stack) 1)
+              (equal (first stack) 'expression))
+         (let ((expr (first stack)))
+           (setf stack (append (butlast stack 1)
+                               (list (make-node "expression_list" (getf expr :value) expr))))))
+
+        ;; Reduce: expression_list -> expression_list expression
+        ((and (>= (length stack) 2)
+              (equal (first stack) 'expression)
+              (equal (second stack) 'expression_list))
+         (let ((expr (first stack))
+               (expr-list (second stack)))
+           (setf stack (append (butlast stack 2)
+                               (list (make-node "expression_list" (getf expr :value) expr-list expr))))))
+
+        ;; Reduce: input -> expression_list
+        ((and (>= (length stack) 1)
+              (equal (first stack) 'expression_list))
+         (let ((expr-list (first stack)))
+           (setf stack (append (butlast stack 1)
+                               (list (make-node "input" (getf expr-list :value) expr-list))))))
+
+        ;; Reduce: start -> input
+        ((and (>= (length stack) 1)
+              (equal (first stack) 'input))
+         (let ((input (first stack)))
+           (setf stack (append (butlast stack 1)
+                               (list (make-node "start" (getf input :value) input))))))
 
         ;; Shift: Push the next token onto the stack
-        (
-          tokens
-          (push (first tokens) stack)
-          (setf tokens (rest tokens))
-        )
+        (tokens
+         (push (first tokens) stack)
+         (setf tokens (rest tokens)))
 
         ;; Finish: Stop when only one node is left
-        (
-          (= (length stack) 1)
-          (return (first stack))
-        )
+        ((= (length stack) 1)
+         (return (first stack)))
 
-        (t (error "Parse error: ~A" stack))
-      )
-    )
-  )
-)
-
-;; Entry Point
-(defun interpret-line (input)
-  "Interpret a single line of G++ code."
-  (let ((tokens (tokenize input)))
-    (parse-shift-reduce tokens)))
+        (t (error "Parse error: ~A" stack))))))
 
 ;; Example Usage
-(format t "~%Parse Tree: ~A~%" (interpret-line "( + 5 ( * 2 3 ) )"))
-(format t "~%Parse Tree: ~A~%" (interpret-line "( if ( less 5 10 ) 1 0 )"))
-(format t "~%Parse Tree: ~A~%" (interpret-line "( set x ( + 1 2 ) )"))
-(format t "~%Parse Tree: ~A~%" (interpret-line "( + 10 20 )"))
+(let ((parse-tree (parse-shift-reduce (tokenize "( + 5 3 )"))))
+  (print-tree parse-tree 0))
